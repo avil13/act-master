@@ -3,4 +3,6 @@
 // Provide a title to the process in `ps`
 process.title = 'act-master-cli';
 
-import '../dist/index.cjs';
+// Use CJS build: bundled deps (e.g. ts-morph) rely on __filename, which is not defined in ESM
+import { createRequire } from 'node:module';
+createRequire(import.meta.url)('../dist/index.cjs');

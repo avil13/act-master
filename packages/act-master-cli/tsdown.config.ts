@@ -5,6 +5,6 @@ export default defineConfig({
   dts: true,
   tsconfig: true,
   platform: 'node',
-  format: ['commonjs'],
+  format: ['commonjs', 'esm'],
   clean: true,
 });
