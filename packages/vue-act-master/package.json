@@ -1,6 +1,6 @@
 {
   "name": "vue-act-master",
-  "version": "2.3.10",
+  "version": "2.3.11",
   "description": "",
   "author": "avil13",
   "main": "dist/vue-act-master.umd.cjs",
@@ -48,7 +48,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/avil13/vue-act-master.git"
+    "url": "https://github.com/avil13/act-master.git"
   },
   "license": "MIT",
   "dependencies": {

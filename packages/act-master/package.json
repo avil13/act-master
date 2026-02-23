@@ -30,7 +30,7 @@
     "README.md",
     "vue.js"
   ],
-  "homepage": "https://avil13.github.io/vue-act-master/",
+  "homepage": "https://avil13.github.io/act-master/",
   "keywords": [
     "act",
     "actions",
@@ -59,7 +59,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/avil13/vue-act-master.git"
+    "url": "https://github.com/avil13/act-master.git"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
