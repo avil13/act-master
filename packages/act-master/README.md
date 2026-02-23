@@ -70,7 +70,8 @@ export class GetDataAction implements ActMasterAction {
   name = 'GetData';
 
   async exec(): Promise<Record<string, any>> {
-    return fetch('https://jsonplaceholder.typicode.com/todos/1').json();
+    return fetch('https://jsonplaceholder.typicode.com/todos/1')
+            .then((res) => res.json());
   }
 }
 ```
