@@ -16,13 +16,11 @@ It creates an instance of the `act-master` class, which can be easily used after
 ```ts
 // Basic part, same for all examples
 
-import { ActTest } from 'vue-act-master'; // OR 'act-master';
+import { ActTest } from 'act-master/test';
 
+// $act - is ActMaster instance with additional props for testing in `$act.t`
 const $act = ActTest.getInstance();
 
-beforeEach(() => {
-  ActTest.resetAll();
-});
 // ...
 ```
 
@@ -30,6 +28,8 @@ beforeEach(() => {
 // ... base settings
 
 it('Example result', async () => {
+  const $act = ActTest.getInstance();
+
   const action: ActMasterAction = {
     name: 'SomeName',
     exec() {
@@ -39,9 +39,9 @@ it('Example result', async () => {
 
   $act.addActions([action]);
 
-  await $act.exec('SomeName');
+  const result = await $act.exec('SomeName');
 
-  expect(ActTest.getLastResult()).toBe(42);
+  expect(result).toBe(42);
 });
 ```
 
@@ -53,6 +53,8 @@ You can also call some event and check your subscription.
 // ... base settings
 
 it('Example check subscription', async () => {
+  const $act = ActTest.getInstance();
+
   const action: ActMasterAction = {
     name: 'SomeName',
     exec() {
@@ -62,13 +64,17 @@ it('Example check subscription', async () => {
 
   $act.addActions([action]);
 
-  const mockFn = jest.fn();
+  const mockFn = vi.fn();
 
   $act.subscribe('SomeName', mockFn);
 
-  await ActTest.exec('SomeName');
+  await $act$.exec('SomeName');
 
   expect(mockFn).toBeCalledTimes(1);
+
+  expect($act.t.entityCount('actions')).toBe(1)
+  expect($act.t.entityCount('watchers')).toBe(0)
+  expect($act.t.entityCount('listeners')).toBe(1)
 });
 ```
 
@@ -78,13 +84,7 @@ it('Example check subscription', async () => {
 | Method Name  |  Description
 |---	|---	|
 | getInstance      | Returns the ActMaster instance
-| resetAll         | Resets the ActMaster settings
-| getLastResult    | Returns the last value
-| addActions       | Adds actions
-| exec             | Execute action
-| subscribe        | Subscribes to action
-| entityCount      | Returns the number of entities ('actions' \| 'watchers' \| 'listeners' \| 'di') *
-| removeSingleton  | Removes singleton ActMaster *
+| entityCount      | Returns the number of entities (`actions` \| `watchers` \| `listeners` \| `di`) *
 
 
 > `*` -Use if you know what it's for

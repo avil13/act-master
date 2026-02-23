@@ -1,11 +1,10 @@
 {
-  "extends": ["../../tsconfig.json"],
   "compilerOptions": {
     "outDir": "dist/types",
     "rootDir": "./src",
     "resolveJsonModule": true,
     "target": "ESNext",
-    "module": "ES2020",
+    "module": "es2022",
     /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', or 'ESNext'. */
     "lib": ["ESNext", "DOM"],
     "declaration": true,
@@ -20,11 +19,15 @@
     "noImplicitThis": true, /* Raise error on 'this' expressions with an implied 'any' type. */
     "moduleResolution": "node",
     "experimentalDecorators": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+    }
   },
   "include": [
     "src/*",
     "src/vue/*",
+    "src/test-utils/*",
   ],
   "exclude": [
     "node_modules",

@@ -1,10 +1,10 @@
 import {
-  ActMaster as AM,
   type ActMaster,
   type ActMasterOptions,
 } from '../act-master';
 import { autoUnsubscribeFactory, refSubscribeFactory, type RefSubscriptionFunction } from './composable';
 import { addDevtools } from './plugins/devtools';
+import { act } from '../helpers';
 
 export { ActInProgress, ActSubscribe } from './decorators';
 
@@ -47,7 +47,7 @@ export class VueActMaster {
   }
 
   static install(app: any, options?: ActMasterOptions): void {
-    VueActMaster.actMaster = VueActMaster.actMaster || new AM(options);
+    VueActMaster.actMaster = VueActMaster.actMaster || act.init(options || {});
     VueActMaster.app = app;
 
     // add the instance method
@@ -77,7 +77,7 @@ export class VueActMaster {
 
 // composable
 
-export type { RefSubscriptionFunction };
+export type { RefSubscriptionFunction, ActMasterOptions, ActMaster };
 
 export const useRefSubscription: RefSubscriptionFunction = refSubscribeFactory(VueActMaster);
 

@@ -33,13 +33,14 @@ export { CancelledAct };
  *
  */
 export class ActMaster implements IActMaster {
+  /* @__PURE__ */
   readonly version = version;
 
   private readonly _actions = new Map<ActEventName, ActMasterAction>();
 
-  private readonly _watchers = new Map<ActEventName, ActEventName[]>();
+  private readonly _watchers = new Map<ActEventName, Set<ActEventName>>();
 
-  private readonly _listeners = new Map<ActEventName, ListenerFunction[]>();
+  private readonly _listeners = new Map<ActEventName, Set<ListenerFunction>>();
 
   private readonly _inProgressWatchers = new Map<
     ActEventName,
@@ -49,6 +50,7 @@ export class ActMaster implements IActMaster {
   private _subCurrentName = '';
   private readonly _subsMap = new Map<any, (() => void)[]>();
 
+  /** @deprecated */
   private _lastUnsubscribe: () => any = () => false;
 
   private _DIContainer: DIMap = {};
@@ -70,12 +72,7 @@ export class ActMaster implements IActMaster {
       return ActMaster.instance;
     }
 
-    const {
-      actions,
-      di,
-      autoUnsubscribeCallback,
-      errorHandlerEventName,
-    } = options;
+    const { actions, di, autoUnsubscribeCallback, errorHandlerEventName } = options;
 
     if (actions) {
       this.addActions(actions);
@@ -89,11 +86,9 @@ export class ActMaster implements IActMaster {
       if (Array.isArray(di)) {
         throw new InvalidDITypeError();
       }
-      for (const k in di) {
-        if (Object.prototype.hasOwnProperty.call(di, k)) {
-          this.setDI(k, di[k]);
-        }
-      }
+      Object.entries(di).forEach(([k, v]) => {
+        this.setDI(k, v);
+      });
     }
 
     if (typeof errorHandlerEventName === 'string') {
@@ -103,6 +98,7 @@ export class ActMaster implements IActMaster {
     ActMaster.instance = this;
   }
 
+  /* @deprecated */
   static getInstance(): ActMaster {
     if (!ActMaster.instance) {
       throw new Error('ActMaster not initialized');
@@ -114,7 +110,7 @@ export class ActMaster implements IActMaster {
 
   addActions(actions: ActMasterAction[]): void {
     if (Array.isArray(actions)) {
-      actions.forEach((action: ActMasterAction) => {
+      actions.values().forEach((action: ActMasterAction) => {
         this.addAction(action);
       });
     }
@@ -142,9 +138,9 @@ export class ActMaster implements IActMaster {
     this.emitDIProps(action);
 
     if (action.$watch) {
-      action.$watch.forEach((watchEventName) => {
-        const watchers = this._watchers.get(watchEventName) || [];
-        watchers.push(eventName);
+      action.$watch.values().forEach((watchEventName) => {
+        const watchers = this._watchers.get(watchEventName) || new Set();
+        watchers.add(eventName);
         this._watchers.set(watchEventName, watchers);
       });
     }
@@ -301,11 +297,14 @@ export class ActMaster implements IActMaster {
                     the entity will be used as the key for "subsList.clear(context)"
    * @returns  Function for unsubscribing
    */
-  subscribe: ActSubscribeType = (actName, listener, context?: any) => {
-    this._listeners.set(actName, [
-      ...(this._listeners.get(actName) || []),
-      listener,
-    ]);
+  subscribe(...args: Parameters<ActSubscribeType>) {
+    const [actName, listener, context] = args
+
+    if (!this._listeners.get(actName)) {
+      this._listeners.set(actName, new Set());
+    }
+    const list = this._listeners.get(actName);
+    list?.add(listener);
 
     const unsubscribe = () => this.unsubscribe(actName, listener);
 
@@ -330,8 +329,7 @@ export class ActMaster implements IActMaster {
     }
 
     return unsubscribe;
-  };
-
+  }
 
   unsubscribe(eventName: ActEventName, listener: ListenerFunction): boolean {
     const listeners = this._listeners.get(eventName);
@@ -340,14 +338,7 @@ export class ActMaster implements IActMaster {
       return false;
     }
 
-    const index = listeners.indexOf(listener);
-    if (index > -1) {
-      listeners.splice(index, 1);
-    }
-
-    this._listeners.set(eventName, listeners);
-
-    return index > -1;
+    return listeners.delete(listener);
   }
 
   once: ActSubscribeType = (
@@ -407,6 +398,7 @@ export class ActMaster implements IActMaster {
   }
 
   // TODO: remove in v3
+  /* @deprecated Will be removed */
   private setProgress(key: ActEventName, status: boolean) {
     if (this._inProgressWatchers.has(key)) {
       //@ts-ignore
@@ -415,10 +407,12 @@ export class ActMaster implements IActMaster {
   }
 
   get subsList() {
+    const self = this;
+
     const clear = (key: any) => {
-      const list = this._subsMap.get(key) || [];
-      list.forEach((unsubscribe) => unsubscribe());
-      this._subsMap.delete(key);
+      const list = self._subsMap.get(key) || [];
+      list.values().forEach((unsubscribe) => unsubscribe());
+      self._subsMap.delete(key);
     };
 
     return {
@@ -428,14 +422,14 @@ export class ActMaster implements IActMaster {
        * subList.clear('key') method - with the same key passed in.
        *
        */
-      add: (key: any, ...fns: (() => any)[]) => {
-        this._subCurrentName = key;
+      add(key: any, ...fns: (() => any)[]) {
+        self._subCurrentName = key;
 
-        const list = this._subsMap.get(key) || [];
+        const list = self._subsMap.get(key) || [];
         if (fns.length) {
           list.push(...fns);
         }
-        this._subsMap.set(key, list);
+        self._subsMap.set(key, list);
 
         return clear;
       },
@@ -510,6 +504,27 @@ export class ActMaster implements IActMaster {
   //#region [ helpers ]
   private getActionOrNull(eventName: ActEventName): ActMasterAction | null {
     return this._actions.get(eventName) || null;
+  }
+
+  /**
+   * @internal For devtools use only
+   */
+  get _dev_() {
+    if ('development,test:ci'.indexOf(`${process.env.NODE_ENV}`) === -1) {
+      throw 'act:dev error';
+    }
+    const s = this;
+    return {
+      get actions() {
+        return s._actions;
+      },
+      get devConf() {
+        return s.config;
+      },
+      get listeners() {
+        return s._listeners;
+      },
+    };
   }
   //#endregion
 }

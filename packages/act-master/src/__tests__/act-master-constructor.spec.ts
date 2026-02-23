@@ -2,12 +2,6 @@ import { ActMaster, ActMasterOptions } from '..';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActTest } from '../test-utils';
 
-let $act: ActMaster = ActTest.getInstance();
-
-const init = (options: ActMasterOptions = {}) => {
-  $act = ActTest.getInstance(options);
-};
-
 describe('ActMaster constructor options', () => {
   beforeEach(() => {
     ActTest.resetAll();
@@ -16,9 +10,7 @@ describe('ActMaster constructor options', () => {
   const exec = () => void 0;
 
   it('actions', () => {
-    expect(ActTest.entityCount('actions')).toBe(0);
-
-    init({
+    const { t } = ActTest.getInstance({
       actions: [
         {
           name: '1',
@@ -31,13 +23,13 @@ describe('ActMaster constructor options', () => {
       ],
     });
 
-    expect(ActTest.entityCount('actions')).toBe(2);
+    expect(t.entityCount('actions')).toBe(2);
   });
 
   it('di', () => {
     expect(ActTest.entityCount('di')).toBe(0);
 
-    init({
+    const { t } = ActTest.getInstance({
       di: {
         api: {},
         router: {},
@@ -45,11 +37,11 @@ describe('ActMaster constructor options', () => {
       },
     });
 
-    expect(ActTest.entityCount('di')).toBe(3);
+    expect(t.entityCount('di')).toBe(3);
   });
 
   it('errorOnReplaceDI', () => {
-    init({
+    const $act = ActTest.getInstance({
       di: {
         api: {},
       },
@@ -63,7 +55,7 @@ describe('ActMaster constructor options', () => {
   it('autoUnsubscribeCallback', () => {
     const mockFn = vi.fn();
 
-    init({
+    const $act = ActTest.getInstance({
       autoUnsubscribeCallback: mockFn,
     });
 
@@ -76,7 +68,7 @@ describe('ActMaster constructor options', () => {
     const errorHandlerEventName = 'on_err';
     const mockFn = vi.fn(() => true);
 
-    init({
+    const $act = ActTest.getInstance({
       errorHandlerEventName,
       actions: [
         {
@@ -99,7 +91,7 @@ describe('ActMaster constructor options', () => {
     const mockFn1 = vi.fn(() => true);
     const mockFn2 = vi.fn(() => true);
 
-    init({
+    const $act = ActTest.getInstance({
       errorHandlerEventName: errorHandlerEventName1,
       actions: [
         {

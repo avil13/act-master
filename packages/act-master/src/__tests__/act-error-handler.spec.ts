@@ -27,6 +27,7 @@ it('ErrorHandler app', async () => {
   // Assert
   expect(errMock).lastCalledWith(new Error('Bad time'));
 });
+
 it('ErrorHandler exec', async () => {
   // Arrange
   const errMock = vi.fn();

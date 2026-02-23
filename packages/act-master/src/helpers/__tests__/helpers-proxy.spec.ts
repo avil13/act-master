@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { act, ActMaster, ActTest, $act } from '../..';
+import { beforeEach, expect, it } from 'vitest';
+import { $act, act } from '../..';
+import { ActTest } from '../../test-utils';
 
 const sumAction = {
   name: 'SumGet',

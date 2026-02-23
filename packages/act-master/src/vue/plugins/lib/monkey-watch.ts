@@ -100,8 +100,12 @@ export function isShowActionByConfig(name: string): boolean {
   return true;
 }
 
-export function toggleSettingsShowCall() {
-  return (config.isShowOnlyCalls = !config.isShowOnlyCalls);
+export function toggleSettingsShowCall(api: any, INSPECTOR_ID: string) {
+  config.isShowOnlyCalls = !config.isShowOnlyCalls;
+
+  setTimeout(() => {
+    api.sendInspectorTree(INSPECTOR_ID);
+  }, 200);
 }
 
 export function useSettings(conf: typeof config | any) {

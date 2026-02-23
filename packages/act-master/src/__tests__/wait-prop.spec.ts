@@ -51,12 +51,4 @@ describe('watch-prop', () => {
 
     expect(execMock).not.toBeCalled();
   });
-
-  // xit('watchOnce', async () => {
-  //   //
-  // });
-
-  // xit('clear watchers', async () => {
-  //   //
-  // });
 });

@@ -1,27 +1,23 @@
 import { setupDevtoolsPlugin } from '@vue/devtools-api';
 import type { App } from 'vue';
 
-import {
-  type ActMaster,
-  type devActMasterConfig,
-  type ActMasterAction,
-} from '../..';
+import { type ActMaster } from '../..';
 
-import {
-  resetMonkeyWatcherState,
-  hasMonkeyState,
-  watchOnEventsByMonkey,
-  getActEventsByMonkeyWatcher,
-  isShowActionByConfig,
-  toggleSettingsShowCall,
-  useSettings,
-  sortActInspectorTree,
-} from './lib/monkey-watch';
-import { debounce, getArguments, logSettings } from './lib/utils';
 import type {
   CustomInspectorNode,
   CustomInspectorState,
 } from './dev-tools-types';
+import {
+  getActEventsByMonkeyWatcher,
+  hasMonkeyState,
+  isShowActionByConfig,
+  resetMonkeyWatcherState,
+  sortActInspectorTree,
+  toggleSettingsShowCall,
+  useSettings,
+  watchOnEventsByMonkey,
+} from './lib/monkey-watch';
+import { debounce, getArguments, logSettings } from './lib/utils';
 
 // #region [ colors ]
 // const PINK_500 = 0xec4899;
@@ -60,14 +56,14 @@ export function addDevtools(app: App, actMaster: ActMaster) {
         id: INSPECTOR_ID,
         label: 'ActMaster 🥷',
         icon: 'gavel',
-        treeFilterPlaceholder: 'Filter acts... Change the filter type ⇒',
+        treeFilterPlaceholder: 'Filter acts...',
         stateFilterPlaceholder: ' ',
         actions: [
           {
             icon: 'playlist_add_check',
             action: () => {
               debounce(200, () => {
-                toggleSettingsShowCall();
+                toggleSettingsShowCall(api, INSPECTOR_ID);
                 // Settings are managed internally via useSettings
                 // No need to call setSettings as it doesn't exist in the API
 
@@ -111,12 +107,9 @@ function getActInspectorTree(
 ): CustomInspectorNode[] {
   const list: CustomInspectorNode[] = [];
 
-  //@ts-ignore
-  const actions = actMaster._actions as Map<string, (...a: any[]) => any>;
-  //@ts-ignore
-  const config = actMaster.config as devActMasterConfig;
-  //@ts-ignore
-  const subMap = actMaster._listeners as Map<ActEventName, ListenerFunction[]>;
+  const actions = actMaster._dev_.actions;
+  const config = actMaster._dev_.devConf;
+  const subMap = actMaster._dev_.listeners;
 
   const errorHandlerName = config.errorHandlerEventName || '';
   const filterLower = filter.toLowerCase();
@@ -132,11 +125,11 @@ function getActInspectorTree(
     }
 
     if (name.toLowerCase().includes(filterLower)) {
-      const subs = subMap.get(name) || [];
+      const subs = subMap.get(name) || new Set();
 
       const tags = [
         {
-          label: `subs: ${subs.length}`,
+          label: `subs: ${subs.size}`,
           textColor: LIME_500,
           backgroundColor: DARK,
         },
@@ -178,14 +171,12 @@ export function getActInspectorState(
   actMaster: ActMaster,
   actName: string
 ): CustomInspectorState {
-  //@ts-ignore
-  const act = actMaster._actions.get(actName) as ActMasterAction | null;
-  //@ts-ignore
-  const config = actMaster.config as devActMasterConfig;
-  //@ts-ignore
-  const subsMap = actMaster._listeners as Map<ActEventName, ListenerFunction[]>;
+  const actions = actMaster._dev_.actions;
+  const act = actions.get(actName) || null;
+  const config = actMaster._dev_.devConf;
+  const subsMap = actMaster._dev_.listeners;
 
-  const subs = subsMap.get(actName) || [];
+  const subs = subsMap.get(actName) || new Set();
 
   watchOnEventsByMonkey(actMaster);
 
@@ -200,7 +191,7 @@ export function getActInspectorState(
     [`Act name: "${actName}"`]: [
       {
         key: 'subscribers',
-        value: subs.length,
+        value: subs.size,
       },
       {
         key: 'errorHandlerEventName',

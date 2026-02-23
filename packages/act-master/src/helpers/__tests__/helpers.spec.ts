@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { act, ActMaster, ActTest } from '../..';
+import { act, ActMaster } from '../..';
+import { ActTest } from '../../test-utils';
 import { fn2act } from '../function-to-action';
 
 const sumAction = {

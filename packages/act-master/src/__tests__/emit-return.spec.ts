@@ -1,5 +1,6 @@
-import { ActMasterAction, ActTest, Emit, EmitAction } from '..';
+import { ActMasterAction, Emit, EmitAction } from '..';
 import { describe, expect, it, vi } from 'vitest';
+import { ActTest } from '../test-utils';
 
 describe('Emit return value', () => {
   it('emit same action', async () => {

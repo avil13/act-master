@@ -1,21 +1,30 @@
 import { type ActExec, ActMaster, type ActMasterOptions, type ActProxy, type ActSubscribeType } from '../act-master';
 
+interface ActFunction {
+  (): ActMaster;
+  readonly $act: ActMaster | null;
+  init(options: ActMasterOptions): ActMaster;
+  subListClear: (key: any) => void;
+}
+
 /**
  * ActMaster instance and libs
  *
  * @returns ActMaster
  */
-function act(): ActMaster {
-  const $act = ActMaster.getInstance();
-  if (!$act) {
+const act = function (): ActMaster {
+  if (!act.$act) {
     throw new Error(
-      'Instance call before initialization. Make a "new ActMaster()" first'
+      `Instance call before initialization. Make a "new ActMaster()" first with "act.init({...})"`
     );
   }
-  return $act;
-}
+  return act.$act;
+} as ActFunction;
 
-act.init = (options: ActMasterOptions) => new ActMaster(options);
+act.init = (options: ActMasterOptions): ActMaster => {
+  // @ts-ignore
+  return act.$act = new ActMaster(options);
+};
 
 // #region [ subscribe ]
 const actSubscribe: ActSubscribeType = (

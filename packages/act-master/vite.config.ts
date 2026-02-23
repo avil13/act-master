@@ -6,10 +6,10 @@ export default defineConfig({
     minify: true,
     lib: {
       name: 'act-master',
-      entry: ['src/index.ts', 'src/vue/index.ts'],
+      entry: ['src/index.ts', 'src/vue/index.ts', 'src/test-utils/index.ts'],
     },
     rollupOptions: {
-      external: ['vue'], // Указываем, что vue — внешний модуль
+      external: ['vue', 'vue-router'],
     },
   },
 });
