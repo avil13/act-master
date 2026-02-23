@@ -40,8 +40,8 @@ export function addDevtools(app: App, actMaster: ActMaster) {
       app,
       label: 'Act Master',
       packageName: 'act-master',
-      homepage: 'https://avil13.github.io/vue-act-master/',
-      logo: 'https://avil13.github.io/vue-act-master/assets/act-master-logo.svg',
+      homepage: 'https://avil13.github.io/act-master/',
+      logo: 'https://avil13.github.io/act-master/assets/act-master-logo.svg',
       componentStateTypes: [STATE_TYPE],
     },
     (api) => {

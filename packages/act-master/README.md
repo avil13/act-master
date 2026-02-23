@@ -4,23 +4,20 @@ A way to separate business logic from application view.
 
 The easiest library to create a flexible and testable application with type safety architecture.
 
-
 ![npm bundle size](https://img.shields.io/bundlephobia/minzip/act-master)
 ![npm version](https://img.shields.io/npm/v/act-master)
 
-## To work with Vue, there are now even fewer dependencies. Just use `act-mater`.
-
+## To work with Vue, there are now even fewer dependencies. Just use `act-mater`
 
 <div align="center">
-  <img  src="https://raw.githubusercontent.com/avil13/vue-act-master/master/assets/act-master-logo.svg" alt="vue-act-master">
+  <img  src="https://raw.githubusercontent.com/avil13/act-master/master/assets/act-master-logo.svg" alt="vue-act-master">
 </div>
 
 ---
 
-## 📗 [Documentation](https://avil13.github.io/vue-act-master/)
+## 📗 [Documentation](https://avil13.github.io/act-master/)
 
 ## 🧪 [Test writing with "ActTest"](https://github.com/avil13/vue-act-master/blob/master/packages/act-master/src/test-utils/README.md)
-
 
 ---
 
@@ -57,9 +54,7 @@ act.init(options);
 
 ```ts
 // @/act/actions
-export const actions: ActMasterAction[] = [
-  new GetDataAction(),
-];
+export const actions: ActMasterAction[] = [new GetDataAction()];
 ```
 
 ```ts
@@ -70,8 +65,7 @@ export class GetDataAction implements ActMasterAction {
   name = 'GetData';
 
   async exec(): Promise<Record<string, any>> {
-    return fetch('https://jsonplaceholder.typicode.com/todos/1')
-            .then((res) => res.json());
+    return fetch('https://jsonplaceholder.typicode.com/todos/1').then((res) => res.json());
   }
 }
 ```
@@ -85,25 +79,25 @@ This will help you test components and change the API more easily.
 ```html
 // App.vue
 <script setup lang="ts">
-import { act } from 'act-master';
-import { ref } from 'vue';
+  import { act } from 'act-master';
+  import { ref } from 'vue';
 
-const myData1 = ref<any>(null);
-const myData2 = ref<any>(null);
+  const myData1 = ref<any>(null);
+  const myData2 = ref<any>(null);
 
-// subscribe on all GetData events
-act().on('GetData', (data) => {
-  myData2.value = data;
-});
+  // subscribe on all GetData events
+  act().on('GetData', (data) => {
+    myData2.value = data;
+  });
 
-// emulate some logic
-setTimeout(() => {
-  console.log(myData1.value, myData2.value); // null, null
+  // emulate some logic
+  setTimeout(() => {
+    console.log(myData1.value, myData2.value); // null, null
 
-  myData1.value = await act().exec('GetData');
+    myData1.value = await act().exec('GetData');
 
-  //
-  console.log(this.myData1, this.myData2);
+    //
+    console.log(this.myData1, this.myData2);
     // {
     //   "id": 1,
     //   "title": "Hello world with Act-Master!!!",
@@ -112,6 +106,6 @@ setTimeout(() => {
     //   "id": 1,
     //   "title": "Hello world with Act-Master!!!",
     // }
-}, 1000)
+  }, 1000);
 </script>
 ```

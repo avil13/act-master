@@ -1,6 +1,6 @@
 {
   "name": "vue-act-master",
-  "version": "2.3.11",
+  "version": "2.3.12",
   "description": "",
   "author": "avil13",
   "main": "dist/vue-act-master.umd.cjs",
@@ -9,9 +9,9 @@
   "type": "module",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "require": "./dist/vue-act-master.umd.cjs",
-      "import": "./dist/vue-act-master.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/vue-act-master.js"
     }
   },
   "files": [
@@ -20,7 +20,7 @@
     "src",
     "nuxt"
   ],
-  "homepage": "https://avil13.github.io/vue-act-master/",
+  "homepage": "https://avil13.github.io/act-master/",
   "keywords": [
     "actions",
     "events",
