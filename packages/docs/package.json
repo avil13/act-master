@@ -7,7 +7,8 @@
     "dev": "DEV=true vitepress dev src",
     "build:dev": "DEV=true vitepress build src",
     "build": "vitepress build src",
-    "serve": "vitepress serve src"
+    "serve": "vitepress serve src",
+    "preview": "DEV=true vitepress preview src"
   },
   "devDependencies": {
     "vitepress": "^1.6.4"
