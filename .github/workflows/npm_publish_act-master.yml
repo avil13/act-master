@@ -14,16 +14,24 @@ jobs:
   publish-npm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 22
           registry-url: https://registry.npmjs.org/
-        # Проверяем изменилась ли версия
+
+      # Check if version has changed
       - name: Set NEED_PUBLISH
         run: echo "NEED_PUBLISH=$(./need-publish.sh)" >> $GITHUB_ENV
 
-      - run: yarn && yarn publish --access public
+      - name: Install
         if: ${{ env.NEED_PUBLISH }}
+        run: npm ci
+        working-directory: .
+
+      - name: Publish
+        if: ${{ env.NEED_PUBLISH }}
+        run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

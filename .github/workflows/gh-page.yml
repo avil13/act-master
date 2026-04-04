@@ -14,27 +14,29 @@ jobs:
   publish-docs-site:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 22
           registry-url: https://registry.npmjs.org/
 
       - name: Set NEED_PUBLISH
         run: echo "NEED_PUBLISH=$(./has-changes.sh)" >> $GITHUB_ENV
 
-      - name: Install and Build - ⌛&🏗️
+      - name: Install
         if: ${{ env.NEED_PUBLISH }}
-        run: |
-          yarn
-          yarn build
+        run: npm ci
+        working-directory: .
 
-      - name: Deploy 🚀.🚀.🚀
+      - name: Build
         if: ${{ env.NEED_PUBLISH }}
-        uses: JamesIves/github-pages-deploy-action@releases/v4
+        run: npm run build
+
+      - name: Deploy
+        if: ${{ env.NEED_PUBLISH }}
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          # ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: packages/docs/src/.vitepress/dist # The folder the action should deploy.
-          CLEAN: true
+          branch: gh-pages
+          folder: packages/docs/src/.vitepress/dist
+          clean: true
