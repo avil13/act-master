@@ -13,13 +13,16 @@ defaults:
 jobs:
   publish-docs-site:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org/
 
       - name: Set NEED_PUBLISH
         run: echo "NEED_PUBLISH=$(./has-changes.sh)" >> $GITHUB_ENV
@@ -27,7 +30,7 @@ jobs:
       - name: Install
         if: ${{ env.NEED_PUBLISH }}
         run: npm ci
-        working-directory: .
+        working-directory: ${{ github.workspace }}
 
       - name: Build
         if: ${{ env.NEED_PUBLISH }}
