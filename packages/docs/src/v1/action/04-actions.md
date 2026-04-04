@@ -13,7 +13,7 @@ Action is an object with the required `name` property and the `exec` method.
 ```ts
 // simplest-action.ts
 
-import { ActMasterAction } from 'vue-act-master';
+import { ActMasterAction } from 'act-master';
 
 export const dataAction: ActMasterAction = {
   name: 'get.data',
@@ -59,7 +59,7 @@ Along with classes, it will be possible to use decorators helper.
 ```ts
 // class-action.ts
 
-import { ActMasterAction } from 'vue-act-master';
+import { ActMasterAction } from 'act-master';
 
 export class ClassAction implements ActMasterAction {
   name = 'get.data';
@@ -89,7 +89,7 @@ This will stop the chain of events if you build it using `watch` or `emit`.
 ```ts
 // cancel-action.ts
 
-import { ActMasterAction, CancelledAct } from 'vue-act-master';
+import { ActMasterAction, CancelledAct } from 'act-master';
 
 export class DataAction implements ActMasterAction {
   name = 'get.data',
@@ -115,7 +115,7 @@ Otherwise an error message of your choice.
 ```ts
 // validate-action.ts
 
-import { ActMasterAction, CancelledAct } from 'vue-act-master';
+import { ActMasterAction, CancelledAct } from 'act-master';
 
 export class DataAction implements ActMasterAction {
   name = 'get.data',
@@ -160,7 +160,7 @@ The argument will be the result of the `exec` method.
 ```ts
 // transformed-action.ts
 
-import { ActMasterAction } from 'vue-act-master';
+import { ActMasterAction } from 'act-master';
 
 export class TransformedAction implements ActMasterAction {
 
@@ -210,7 +210,7 @@ Otherwise it will start an endless loop.
 
 ```ts
 // Action queue
-import { ActMasterAction } from 'vue-act-master';
+import { ActMasterAction } from 'act-master';
 
 export class FirstAction implements ActMasterAction {
   name = 'FirstAction';
@@ -277,7 +277,7 @@ If you use classes and decorators, you can write it down shorter.
 
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator';
-  import { ActInProgress } from 'vue-act-master';
+  import { ActInProgress } from 'act-master';
 
   @Component
   export default class MyVueComponent extends Vue {
@@ -309,7 +309,7 @@ In the code it looks like this:
 ```ts
 // main.ts
 // ...
-import { VueActMaster } from 'vue-act-master';
+import { VueActMaster } from 'act-master';
 
 import { actions } from '../act/actions';
 import { SuperAPI } from '../you/api';
@@ -357,7 +357,7 @@ There are two ways to get DI entities:
 // with-di-action.ts
 // with decorator
 
-import { UseDI, ActMasterAction } from 'vue-act-master';
+import { UseDI, ActMasterAction } from 'act-master';
 
 import { SuperAPI } from '../you/api';
 
@@ -379,7 +379,7 @@ OR
 // with-di-action.ts
 // without decorator
 
-import { ActMasterAction } from 'vue-act-master';
+import { ActMasterAction } from 'act-master';
 import { SuperAPI } from '../you/api';
 
 export class WithDiAction implements ActMasterAction {
@@ -412,7 +412,7 @@ You can use this to [return different values](../advanced/08-emit-many-results.h
 ```ts
 // with-emit-action.ts
 
-import { ActMasterAction, EmitAction } from 'vue-act-master';
+import { ActMasterAction, EmitAction } from 'act-master';
 
 export class WithEmitAction implements ActMasterAction {
   name = 'login';
@@ -439,7 +439,7 @@ OR
 // with-emit-action.ts
 // with decorator
 
-import { ActMasterAction, Emit, EmitAction } from 'vue-act-master';
+import { ActMasterAction, Emit, EmitAction } from 'act-master';
 
 export class WithEmitAction implements ActMasterAction {
   name = 'login';

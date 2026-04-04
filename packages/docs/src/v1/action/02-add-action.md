@@ -14,7 +14,7 @@ import { actions } from '../act/actions';
 You can pass it to the constructor options:
 
 ```ts
-import { VueActMaster } from 'vue-act-master';
+import { VueActMaster } from 'act-master';
 import { actions } from '../act/actions';
 
 Vue.use(VueActMaster, {

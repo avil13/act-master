@@ -12,7 +12,7 @@ To do this, you need to specify the `isSingleExec` property in the action.
 
 ```ts
 // with-di-action.ts
-import { ActMasterAction } from 'vue-act-master';
+import { ActMasterAction } from 'act-master';
 
 import { api } from '../you/api';
 

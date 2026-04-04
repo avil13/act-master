@@ -27,10 +27,10 @@ const $act = new ActMaster({
 
 ## Vue installation
 
-Then add a vue-act-master.
+Then add a act-master.
 
 ```bash
-yarn add vue-act-master
+yarn add act-master
 ```
 
 ```ts
@@ -39,7 +39,7 @@ yarn add vue-act-master
 import Vue from 'vue';
 import App from './App.vue';
 
-import { VueActMaster } from 'vue-act-master';
+import { VueActMaster } from 'act-master';
 
 // Actions
 import { actions } from '../act/actions';
@@ -61,7 +61,7 @@ new Vue({
     ...
     "types": [
       // Add the types in typescript
-      "vue-act-master",
+      "act-master",
     ],
   }
 }
@@ -71,7 +71,7 @@ It is also possible to transfer other options.
 You can use the `ActMasterOptions` type.
 
 ```ts
-import { VueActMaster, ActMasterOptions } from 'vue-act-master';
+import { VueActMaster, ActMasterOptions } from 'act-master';
 //...
 ```
 
@@ -92,15 +92,15 @@ import { VueActMaster, ActMasterOptions } from 'vue-act-master';
 Install dependencies:
 
 ```bash
-yarn add vue-act-master
+yarn add act-master
 ```
 
-Add `vue-act-master/nuxt` to modules section of `nuxt.config.js`
+Add `act-master/nuxt` to modules section of `nuxt.config.js`
 
 ```js
 // nuxt.config.js
 export default {
-  modules: ['vue-act-master/nuxt'];
+  modules: ['act-master/nuxt'];
 }
 ```
 
@@ -110,7 +110,7 @@ Parameters can be passed to the "actMaster" property.
 // nuxt.config.js
 export default {
   ...
-  modules: ['vue-act-master/nuxt'],
+  modules: ['act-master/nuxt'],
   actMaster: { // config for Vue-Act-Master
     actions: require.resolve('./act/index.ts'), //    resolve path to the actions file
     di: require.resolve('./act/di.ts'), // [optional] resolve path to the DI file

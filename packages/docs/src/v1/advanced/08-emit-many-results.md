@@ -41,7 +41,7 @@ It was discussed [here](../action/04-actions.html#emit-another-action-in-action)
 
 ```ts
 // with-emit-action.ts
-import { ActMasterAction, EmitAction } from 'vue-act-master';
+import { ActMasterAction, EmitAction } from 'act-master';
 
 import { api } from '../you/api';
 
