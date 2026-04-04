@@ -215,9 +215,9 @@ export class Login implements ActMasterAction {
   }
 }
 ```
-```ts [With method 'useEmit']
+```ts [With method 'useDI']
 // login.act.ts
-import { ActMasterAction, useDI } from 'act-master';
+import { ActMasterAction } from 'act-master';
 
 export class Login implements ActMasterAction {
   name = 'Login';
@@ -250,7 +250,7 @@ If you use `errorHandlerEventName`, the result of `act().exec(...)` will be null
 :::
 
 ```ts
-act().init({
+act.init({
   // ...
   errorHandlerEventName: 'OnError',
 })
@@ -263,7 +263,7 @@ export class Login implements ActMasterAction {
   name = 'Login';
 
   // In case of an error, 'OnError' act will catch error
-  errorHandlerEventName = 'OnError';
+  $onError = 'OnError';
 
   async exec(loginData: any): Promise<void> {
     await api.login(loginData);
@@ -295,8 +295,8 @@ export class FirstAction implements ActMasterAction {
 };
 
 export class SecondAction implements ActMasterAction {
-  // Names of events, after any and which action automatically starts.
-  watch: ['FirstAction'],
+  // Names of events, after any of which this action automatically starts.
+  $watch = ['FirstAction'];
 
   name = 'SecondAction';
 
@@ -331,7 +331,7 @@ export class GetData implements ActMasterAction {
 
 Before calling the [exec](exec-and-subscribe#exec) method, you can validate the arguments that are sent to it.
 
-We add a method `validateInput` to which all arguments intended for `exec` get.
+We add a method `$validate` to which all arguments intended for `exec` get.
 
 If they are valid we return `true`.
 
@@ -343,9 +343,9 @@ Otherwise an error message of your choice.
 import { ActMasterAction, CancelledAct } from 'act-master';
 
 export class GetData implements ActMasterAction {
-  name = 'GetData',
+  name = 'GetData';
 
-  validateInput(arg?: any): true | CancelledAct {
+  $validate(arg?: any): true | CancelledAct {
     if (typeof arg !== 'number') {
       return new CancelledAct('Validation error', { id: 'Must be a number' });
     }
@@ -357,8 +357,8 @@ export class GetData implements ActMasterAction {
     const url = `https://jsonplaceholder.typicode.com/todos/${id}`;
     const response = await fetch(url);
     return response.json();
-  },
-};
+  }
+}
 ```
 
 And try to exec
@@ -395,7 +395,7 @@ export class CheckAuth implements ActMasterAction {
   name = 'CheckAuth';
 
   // At runtime, the result will be one for many parallel requests
-  isSingleExec = true;
+  $isSingleton = true;
 
   exec() {
     return api.isAuth();
@@ -410,11 +410,12 @@ Example of a testing with [ActTest](testing#actmaster-test-utils)
 ```ts
 // check-auth.spec.ts
 import { ActMasterAction, ActTest } from 'act-master';
+import { vi } from 'vitest';
 
 it('SinglePromise one call', async () => {
   // Arrange
   const actionMock: ActMasterAction = {
-    isSingleExec: true, // prop for single exec
+    $isSingleton: true, // prop for single exec
     name: 'ACT_NAME',
     async exec(val: number) {
       return await new Promise((ok) => setTimeout(() => ok(val), 50));
@@ -425,7 +426,7 @@ it('SinglePromise one call', async () => {
     actions: [actionMock],
   });
 
-  const mockFn = jest.fn();
+  const mockFn = vi.fn();
 
   $act.subscribe('ACT_NAME', mockFn);
 

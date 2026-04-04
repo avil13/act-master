@@ -49,6 +49,7 @@ You can also call some event and check your subscription.
 ### Example 2:
 ```ts
 import { ActTest } from 'act-master';
+import { vi } from 'vitest';
 
 it('Example check subscription', async () => {
   // Arrange
@@ -63,7 +64,7 @@ it('Example check subscription', async () => {
 
   $act.addActions([action]);
 
-  const mockFn = jest.fn();
+  const mockFn = vi.fn();
 
   $act.subscribe('SomeName', mockFn);
 
@@ -88,9 +89,9 @@ it('Example check subscription', async () => {
 | makeActionStub  | Create empty action for testing                                                   |
 | exec            | Execute action                                                                    |
 | subscribe       | Subscribes to action                                                              |
-| entityCount     | Returns the number of entities ('actions' \| 'waiters' \| 'listeners' \| 'di') \* |
+| entityCount     | Returns the number of entities ('actions' \| 'watchers' \| 'listeners' \| 'di') \* |
 | removeSingleton | Removes singleton ActMaster \*                                                    |
 
 > `*` -Use if you know what it's for
 
-More examples in [repo](https://github.com/avil13/vue-act-master/tree/master/packages/act-master/src/__tests__)
+More examples in [repo](https://github.com/avil13/act-master/tree/master/packages/act-master/src/__tests__)

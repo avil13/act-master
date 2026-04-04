@@ -1,5 +1,5 @@
 ---
-title: Install Vue-Act-Master | Guide
+title: Install Act-Master | Guide
 ---
 # Installation
 
@@ -10,10 +10,10 @@ To install, simply type the command
 npm install act-master
 ```
 
-If you use Vue and optional syntax, you will be comfortable installing the wrapper and taking advantage of it.
+If you use Vue, the Vue plugin is included in the package and available as a subpath export.
 
 ```sh
-npm install vue-act-master
+npm install act-master
 ```
 
 Now you need to initialize the library.
@@ -61,7 +61,7 @@ createApp(App).mount('#app');
 import Vue from 'vue';
 import App from './App.vue';
 
-import { VueActMaster, ActMasterOptions } from 'vue-act-master';
+import { VueActMaster, ActMasterOptions } from 'act-master/vue';
 import { actions } from '../act/actions';
 
 const options: ActMasterOptions = {
