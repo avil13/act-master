@@ -5,7 +5,7 @@ on:
     branches:
       - master
     paths:
-      - 'packages/docs/**'
+      - "packages/docs/**"
 
   workflow_dispatch:
 
@@ -30,7 +30,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm i
         working-directory: packages/docs
 
       - name: Build docs
