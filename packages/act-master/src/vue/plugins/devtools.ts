@@ -1,4 +1,4 @@
-import { setupDevtoolsPlugin } from '@vue/devtools-api';
+import { onDevToolsClientConnected, setupDevToolsPlugin } from '@vue/devtools-api';
 import type { App } from 'vue';
 
 import { type ActMaster } from '../..';
@@ -19,84 +19,69 @@ import {
 } from './lib/monkey-watch';
 import { debounce, getArguments, logSettings } from './lib/utils';
 
-// #region [ colors ]
-// const PINK_500 = 0xec4899;
-const BLUE_600 = 0x2563eb;
 const LIME_500 = 0x84cc16;
 const CYAN_400 = 0x22d3ee;
 const ORANGE_400 = 0xfb923c;
-const GRAY_100 = 0xf4f4f5;
 const DARK = 0x666666;
-// #endregion
 
 export function addDevtools(app: App, actMaster: ActMaster) {
   const STATE_TYPE = 'ActMaster';
   const INSPECTOR_ID = 'actMaster';
-  // const ACTIONS_LAYER_ID = 'actMaster:action';
 
-  setupDevtoolsPlugin(
-    {
-      id: 'com.avil13',
-      app,
-      label: 'Act Master',
-      packageName: 'act-master',
-      homepage: 'https://avil13.github.io/act-master/',
-      logo: 'https://avil13.github.io/act-master/assets/act-master-logo.svg',
-      componentStateTypes: [STATE_TYPE],
-    },
-    (api) => {
-      // Use the API here
+  onDevToolsClientConnected(() => {
+    setupDevToolsPlugin(
+      {
+        id: 'com.avil13',
+        app,
+        label: 'Act Master',
+        packageName: 'act-master',
+        homepage: 'https://avil13.github.io/act-master/',
+        logo: 'https://avil13.github.io/act-master/assets/act-master-logo.svg',
+        componentStateTypes: [STATE_TYPE],
+      },
+      (api) => {
+        const currentSettings = useSettings(api.getSettings());
+        logSettings('CALL_FILTER', currentSettings.isShowOnlyCalls);
 
-      // #region [ inspector ]
-      const currentSettings = useSettings(api.getSettings());
-
-      logSettings('CALL_FILTER', currentSettings.isShowOnlyCalls);
-
-      api.addInspector({
-        id: INSPECTOR_ID,
-        label: 'ActMaster 🥷',
-        icon: 'gavel',
-        treeFilterPlaceholder: 'Filter acts...',
-        stateFilterPlaceholder: ' ',
-        actions: [
-          {
-            icon: 'playlist_add_check',
-            action: () => {
-              debounce(200, () => {
-                toggleSettingsShowCall(api, INSPECTOR_ID);
-                // Settings are managed internally via useSettings
-                // No need to call setSettings as it doesn't exist in the API
-
-                logSettings('CALL_FILTER', currentSettings.isShowOnlyCalls);
-              });
+        api.addInspector({
+          id: INSPECTOR_ID,
+          label: 'ActMaster 🥷',
+          icon: 'gavel',
+          treeFilterPlaceholder: 'Filter acts...',
+          stateFilterPlaceholder: ' ',
+          actions: [
+            {
+              icon: 'playlist_add_check',
+              action: () => {
+                debounce(200, () => {
+                  toggleSettingsShowCall(api, INSPECTOR_ID);
+                  logSettings('CALL_FILTER', currentSettings.isShowOnlyCalls);
+                });
+              },
+              tooltip: 'Toggle show only Acts that have been called',
             },
-            tooltip: 'Toggle show only Acts that have been called',
-          },
-          {
-            icon: 'delete',
-            action: () => {
-              resetMonkeyWatcherState();
+            {
+              icon: 'delete',
+              action: () => { resetMonkeyWatcherState(); },
+              tooltip: 'Clears the call-state',
             },
-            tooltip: 'Clears the call-state',
-          },
-        ],
-      });
+          ],
+        });
 
-      api.on.getInspectorTree((payload) => {
-        if (payload.app === app && payload.inspectorId === INSPECTOR_ID) {
-          payload.rootNodes = getActInspectorTree(actMaster, payload.filter);
-        }
-      });
+        api.on.getInspectorTree((payload) => {
+          if (payload.app === app && payload.inspectorId === INSPECTOR_ID) {
+            payload.rootNodes = getActInspectorTree(actMaster, payload.filter);
+          }
+        });
 
-      api.on.getInspectorState((payload) => {
-        if (payload.app === app && payload.inspectorId === INSPECTOR_ID) {
-          payload.state = getActInspectorState(actMaster, payload.nodeId);
-        }
-      });
-
-      // #endregion
-    }
-  );
+        api.on.getInspectorState((payload) => {
+          if (payload.app === app && payload.inspectorId === INSPECTOR_ID) {
+            payload.state = getActInspectorState(actMaster, payload.nodeId);
+          }
+        });
+      }
+    );
+  });
 }
 
 // #region [ HELPERS ]

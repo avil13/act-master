@@ -1,65 +1,34 @@
 export function getArguments(fn?: Function): string[] {
-  const argRegExp = /[^\(]*\(([^\)]*)\)/;
-  const match = fn?.toString().match(argRegExp);
-
-  if (match && match[1]) {
-    return match[1]
-      .split(',')
-      .map((arg) => arg.trim())
-      .filter((arg) => arg.length > 0);
+  const match = fn?.toString().match(/[^\(]*\(([^\)]*)\)/);
+  if (match?.[1]) {
+    return match[1].split(',').map((a) => a.trim()).filter(Boolean);
   }
   return [];
 }
 
 export function getCurrentTime() {
-  const now = new Date();
-  return `${now.getHours().toString().padStart(2, '0')}:${now
-    .getMinutes()
-    .toString()
-    .padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now
-    .getMilliseconds()
-    .toString()
-    .padStart(3, '0')}`;
+  // ponytail: toISOString gives HH:MM:SS.mmm in UTC; fine for devtools timestamps
+  return new Date().toISOString().slice(11, 23);
 }
 
-// #region [ debounce ]
-let debounceTimer: Record<any, any> = {};
+// ponytail: WeakMap key — fn.toString() collapses under minification
+const debounceTimers = new WeakMap<Function, ReturnType<typeof setTimeout>>();
 
-/**
- *
- * @param {*} wait
- * @param {*} func
- * @param {*} args
- * @example
- *  debounce(200, (v) => {
- *      this.$store.commit('api/search', v);
- *  }, val);
- */
 export function debounce(wait: number, func: Function, args?: any) {
-  debounceTimer = debounceTimer || {};
-
-  if (debounceTimer[func.toString()]) {
-    clearTimeout(debounceTimer[func.toString()]);
-  }
-
-  debounceTimer[func.toString()] = setTimeout(() => {
+  clearTimeout(debounceTimers.get(func));
+  debounceTimers.set(func, setTimeout(() => {
     func(args);
-    debounceTimer[func.toString()] = null;
-  }, wait);
+    debounceTimers.delete(func);
+  }, wait));
 }
-
-// #endregion
-
 
 export function logSettings(type: 'CALL_FILTER', value: any) {
-  if (type === 'CALL_FILTER') {
-    const title = value ? 'Acts filtered by call' : 'Show all Acts';
-    console.log(
-      `%c ActMaster 🥷 %c "${title}"\n%c Don\'t forget to update the list %c ⟳ `,
-      'background:#44bd90; color:#fff; border-radius: 3px; padding: 3px;',
-      value ? 'background:transparent; color:#e56e17;' : 'background:transparent; color:#44bd90;',
-      'background:transparent; color:#44bd90;',
-      'background:#ffc759; color:#fff; border-radius: 3px; padding: 3px;'
-    );
-  }
+  const title = value ? 'Acts filtered by call' : 'Show all Acts';
+  console.log(
+    `%c ActMaster 🥷 %c "${title}"\n%c Don\'t forget to update the list %c ⟳ `,
+    'background:#44bd90; color:#fff; border-radius: 3px; padding: 3px;',
+    value ? 'background:transparent; color:#e56e17;' : 'background:transparent; color:#44bd90;',
+    'background:transparent; color:#44bd90;',
+    'background:#ffc759; color:#fff; border-radius: 3px; padding: 3px;'
+  );
 }

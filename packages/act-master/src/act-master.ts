@@ -22,8 +22,6 @@ import {
 //@ts-ignore
 import { version } from '../package.json';
 
-import { migrationHelper } from './utils/migration-helper';
-
 export * from './errors';
 export * from './types';
 export * from './decorators/index';
@@ -131,7 +129,11 @@ export class ActMaster implements IActMaster {
       action.useEmit(bindedEmitter);
     }
 
-    migrationHelper(action);
+    // TODO: inlined from migration-helper.ts — remove in v3
+    if ((action as any).watch && !action.$watch) action.$watch = (action as any).watch;
+    if ((action as any).isSingleExec && typeof action.$isSingleton !== 'boolean') action.$isSingleton = (action as any).isSingleExec;
+    if (typeof (action as any).validateInput === 'function' && !action.$validate) action.$validate = (action as any).validateInput.bind(action);
+    if ((action as any).errorHandlerEventName && !action.$onError) action.$onError = (action as any).errorHandlerEventName;
 
     this._actions.set(eventName, action);
 
