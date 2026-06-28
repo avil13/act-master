@@ -1,42 +1,40 @@
-name: Deploy Docs to GitHub Pages
+name: gh-page
 
 on:
   push:
     branches:
       - master
-    paths:
-      - "packages/docs/**"
 
-  workflow_dispatch:
-
-permissions:
-  contents: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+    working-directory: packages/docs
 
 jobs:
-  build-and-deploy:
+  publish-docs-site:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v1
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v1
         with:
-          node-version: 22
-          cache: npm
+          node-version: 16
+          registry-url: https://registry.npmjs.org/
 
-      - name: Install dependencies
-        run: npm ci
-        working-directory: packages/docs
+      - name: Set NEED_PUBLISH
+        run: echo "NEED_PUBLISH=$(./has-changes.sh)" >> $GITHUB_ENV
 
-      - name: Build docs
-        run: npm run build
-        working-directory: packages/docs
+      - name: Install and Build - ⌛&🏗️
+        if: ${{ env.NEED_PUBLISH }}
+        run: |
+          yarn
+          yarn build
 
-      - name: Deploy to gh-pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Deploy 🚀.🚀.🚀
+        if: ${{ env.NEED_PUBLISH }}
+        uses: JamesIves/github-pages-deploy-action@releases/v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: packages/docs/src/.vitepress/dist
+          # ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: packages/docs/src/.vitepress/dist # The folder the action should deploy.
+          CLEAN: true

@@ -28,7 +28,7 @@ hero:
       link: /guide/installation
     - theme: alt
       text: Act API
-      link: /guide/act-master-action
+      link: /guide/act-master-actions
     - theme: alt
       text: Advanced
       link: /advanced/

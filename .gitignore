@@ -63,6 +63,8 @@ typings/
 
 **/dist/*
 
+package-lock.json
+
 
 __build__/
 copy.sh
