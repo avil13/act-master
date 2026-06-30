@@ -1,4 +1,28 @@
-# exec Act
+---
+title: Exec and Subscribe | Act-Master
+description: Execute actions and subscribe to results with Act-Master. Learn exec, subscribe, on/off, once, unsubscribe patterns, and advanced subsList bulk management.
+head:
+  - - meta
+    - name: description
+      content: Execute actions and subscribe to results with Act-Master. Learn exec, subscribe, on/off, once, unsubscribe patterns, and advanced subsList bulk management.
+  - - meta
+    - name: keywords
+      content: act-master exec, subscribe action, unsubscribe, pub/sub, action events, once, subsList, act-master reactive
+  - - meta
+    - property: og:title
+      content: Exec and Subscribe | Act-Master
+  - - meta
+    - property: og:description
+      content: Execute actions and subscribe to results with Act-Master. Learn exec, subscribe, on/off, once, unsubscribe patterns, and advanced subsList bulk management.
+  - - meta
+    - property: og:url
+      content: https://avil13.github.io/act-master/guide/exec-and-subscribe
+  - - link
+    - rel: canonical
+      href: https://avil13.github.io/act-master/guide/exec-and-subscribe
+---
+
+# Exec and Subscribe
 
 ## exec
 

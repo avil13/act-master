@@ -1,71 +1,101 @@
 ---
-title: Install Vue-Act-Master | Guide
+title: Installation | Act-Master
+description: Install Act-Master and set up your Vue or React project with action-based architecture. Supports Vue 3, Vue 2, React, and Vanilla TypeScript.
+head:
+  - - meta
+    - name: description
+      content: Install Act-Master and set up your Vue or React project with action-based architecture. Supports Vue 3, Vue 2, React, and Vanilla TypeScript.
+  - - meta
+    - name: keywords
+      content: act-master installation, vue act-master setup, react act-master, typescript actions setup, npm install act-master
+  - - meta
+    - property: og:title
+      content: Installation | Act-Master
+  - - meta
+    - property: og:description
+      content: Install Act-Master and set up your Vue or React project with action-based architecture. Supports Vue 3, Vue 2, React, and Vanilla TypeScript.
+  - - meta
+    - property: og:url
+      content: https://avil13.github.io/act-master/guide/installation
+  - - link
+    - rel: canonical
+      href: https://avil13.github.io/act-master/guide/installation
 ---
 # Installation
 
-
-To install, simply type the command
+## Install
 
 ```sh
 npm install act-master
 ```
 
-If you use Vue and optional syntax, you will be comfortable installing the wrapper and taking advantage of it.
+When installing, [`act-master-cli`](https://www.npmjs.com/package/act-master-cli) is included as a dependency. It is small and does not participate in runtime — it helps with code generation during development.
+
+## Initialize the project
+
+Run the init command and follow the prompts. It will create a `.act-master.yaml` config file used to find `*.act.ts` files and generate the actions index.
 
 ```sh
-npm install vue-act-master
+npx act-master-cli init
 ```
 
-Now you need to initialize the library.
+If you accepted the defaults, you also get an example error-handler action — `OnError.act.ts`.
 
-You can use two options, one is more suitable in your application prevails functional style, for example "Composition API" in Vue or functional components in React.
-If you use classes more often, like in Angular, you can use constructor initialization.
-
+## Bootstrap
 
 ::: code-group
-```ts [Function Style]
-import { act, ActMasterOptions } from 'act-master';
-import { actions } from '@/act/generated/actions';
+```ts [Vue3 Composition API]
+import { createApp } from 'vue';
+import App from './App.vue'
+
+import { VueActMaster, type ActMasterOptions } from 'act-master/vue';
+import { actions } from '@/act/actions';
 
 const options: ActMasterOptions = {
   actions,
+  // If you used the default error file on init:
+  errorHandlerEventName: 'OnError',
+};
+
+createApp(App)
+  .use(VueActMaster, options)
+  .mount('#app');
+```
+
+```ts [Function Style (React / Vanilla)]
+import { act, type ActMasterOptions } from 'act-master';
+import { actions } from '@/act/actions';
+
+const options: ActMasterOptions = {
+  actions,
+  errorHandlerEventName: 'OnError',
 };
 
 act.init(options);
 ```
+
 ```ts [Class Style]
-import { ActMaster, ActMasterOptions } from 'act-master';
+import { ActMaster, type ActMasterOptions } from 'act-master';
 import { actions } from '../act/actions';
 
 const options: ActMasterOptions = {
   actions,
+  errorHandlerEventName: 'OnError',
 };
 
 const $act = new ActMaster(options);
 ```
-```ts [Vue3 Composition API]
-import { createApp } from 'vue';
 
-import { act, ActMasterOptions } from 'act-master';
-import { actions } from '../act/actions';
-
-const options: ActMasterOptions = {
-  actions,
-};
-
-act.init(options);
-
-createApp(App).mount('#app');
-```
 ```ts [Vue2]
 import Vue from 'vue';
 import App from './App.vue';
 
-import { VueActMaster, ActMasterOptions } from 'vue-act-master';
-import { actions } from '../act/actions';
+import { VueActMaster, type ActMasterOptions } from 'act-master/vue';
+import { actions } from '@/act/actions';
 
 const options: ActMasterOptions = {
   actions,
+  errorHandlerEventName: 'OnError',
 };
 
 Vue.use(VueActMaster, options);
@@ -76,19 +106,14 @@ new Vue({
 ```
 :::
 
+## ActMasterOptions
 
-# ActMasterOptions
-
-Description of configure parameters
-
-
-| Property                              | Default   | Description
+| Property | Default | Description |
 | --- | --- | --- |
-| actions?: ActMasterAction[];          | []        | An array of action items
-| errorHandlerEventName?: ActEventName; | undefined | Action call on error (can be used in actions too)
-| di?: DIMap;                           | {}        | DI entities
-| autoUnsubscribeCallback               | undefined | Method for calling auto unsubscribe
-
+| `actions?: ActMasterAction[]` | `[]` | Array of action instances |
+| `errorHandlerEventName?: ActEventName` | `undefined` | Action name to call on uncaught error |
+| `di?: DIMap` | `{}` | Dependency injection map |
+| `autoUnsubscribeCallback` | `undefined` | Hook for plugin-level auto-unsubscribe |
 
 Now all that's left to do is:
 

@@ -1,16 +1,31 @@
 ---
-title: Act-Master
+title: Act-Master — Frontend Action Architecture for Vue & React
+description: A frontend-way to separate business logic from application view. Build clean, testable, type-safe applications with action-based pub/sub architecture.
 head:
   - - meta
     - name: description
-      content: The best way to separate logic and view
+      content: A frontend-way to separate business logic from application view. Build clean, testable, type-safe applications with action-based pub/sub architecture.
   - - meta
     - name: keywords
-      content: vue action emit events
+      content: act-master, vue, react, typescript, frontend architecture, business logic, pub/sub, actions, dependency injection, state management, testing
+  - - meta
+    - property: og:title
+      content: Act-Master — Frontend Action Architecture for Vue & React
+  - - meta
+    - property: og:description
+      content: A frontend-way to separate business logic from application view. Build clean, testable, type-safe applications with action-based pub/sub architecture.
+  - - meta
+    - property: og:url
+      content: https://avil13.github.io/act-master/
+  - - link
+    - rel: canonical
+      href: https://avil13.github.io/act-master/
+  - - script
+    - type: application/ld+json
+    - '{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Act-Master","applicationCategory":"DeveloperApplication","operatingSystem":"Any","description":"A frontend-way to separate business logic from application view.","url":"https://avil13.github.io/act-master/","codeRepository":"https://github.com/avil13/act-master","programmingLanguage":"TypeScript"}'
 
 sidebar: false
 aside: false
-
 
 # https://vitepress.dev/reference/default-theme-home-page
 layout: home
@@ -21,17 +36,17 @@ hero:
   tagline: A frontend-way to separate business logic from application view.
   image:
     src: /assets/act-master-logo.svg
-    alt: act-master
+    alt: Act-Master logo — action-based frontend architecture framework for Vue and React
   actions:
     - theme: brand
       text: Get Started
       link: /guide/installation
     - theme: alt
-      text: Act API
-      link: /guide/act-master-actions
+      text: ActMasterAction
+      link: /guide/act-master-action
     - theme: alt
-      text: Advanced
-      link: /advanced/
+      text: CLI
+      link: /guide/cli
 
 features:
   - title: Commander

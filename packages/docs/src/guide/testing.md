@@ -1,3 +1,27 @@
+---
+title: Testing | Act-Master
+description: Test your Act-Master actions with ActTest utilities. Isolated test instances, result assertions, subscription testing, and a full list of available test methods.
+head:
+  - - meta
+    - name: description
+      content: Test your Act-Master actions with ActTest utilities. Isolated test instances, result assertions, subscription testing, and a full list of available test methods.
+  - - meta
+    - name: keywords
+      content: act-master testing, ActTest, action unit tests, jest act-master, subscription testing, test actions typescript
+  - - meta
+    - property: og:title
+      content: Testing | Act-Master
+  - - meta
+    - property: og:description
+      content: Test your Act-Master actions with ActTest utilities. Isolated test instances, result assertions, subscription testing, and a full list of available test methods.
+  - - meta
+    - property: og:url
+      content: https://avil13.github.io/act-master/guide/testing
+  - - link
+    - rel: canonical
+      href: https://avil13.github.io/act-master/guide/testing
+---
+
 # ActMaster test-utils
 
 ## ActTest
@@ -93,4 +117,4 @@ it('Example check subscription', async () => {
 
 > `*` -Use if you know what it's for
 
-More examples in [repo](https://github.com/avil13/vue-act-master/tree/master/packages/act-master/src/__tests__)
+More examples in [repo](https://github.com/avil13/act-master/tree/master/packages/act-master/src/__tests__)
