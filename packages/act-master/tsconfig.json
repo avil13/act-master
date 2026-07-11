@@ -7,6 +7,7 @@
     "module": "es2022",
     /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', or 'ESNext'. */
     "lib": ["ESNext", "DOM"],
+    "types": ["node"],
     "declaration": true,
     "emitDeclarationOnly": true,
     "sourceMap": true, /* Generates corresponding '.map' file. */
@@ -17,11 +18,10 @@
     "strictFunctionTypes": true /* Enable strict checking of function types. */,
     "strictPropertyInitialization": true /* Enable strict checking of property initialization in classes. */,
     "noImplicitThis": true, /* Raise error on 'this' expressions with an implied 'any' type. */
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "experimentalDecorators": true,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
+      "@/*": ["./src/*"],
     }
   },
   "include": [
