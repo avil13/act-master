@@ -1,3 +1,27 @@
+---
+title: Testing | Act-Master
+description: Test your Act-Master actions with ActTest utilities. Isolated test instances, result assertions, subscription testing, and a full list of available test methods.
+head:
+  - - meta
+    - name: description
+      content: Test your Act-Master actions with ActTest utilities. Isolated test instances, result assertions, subscription testing, and a full list of available test methods.
+  - - meta
+    - name: keywords
+      content: act-master testing, ActTest, action unit tests, jest act-master, subscription testing, test actions typescript
+  - - meta
+    - property: og:title
+      content: Testing | Act-Master
+  - - meta
+    - property: og:description
+      content: Test your Act-Master actions with ActTest utilities. Isolated test instances, result assertions, subscription testing, and a full list of available test methods.
+  - - meta
+    - property: og:url
+      content: https://avil13.github.io/act-master/guide/testing
+  - - link
+    - rel: canonical
+      href: https://avil13.github.io/act-master/guide/testing
+---
+
 # ActMaster test-utils
 
 ## ActTest
@@ -49,7 +73,6 @@ You can also call some event and check your subscription.
 ### Example 2:
 ```ts
 import { ActTest } from 'act-master';
-import { vi } from 'vitest';
 
 it('Example check subscription', async () => {
   // Arrange
@@ -64,7 +87,7 @@ it('Example check subscription', async () => {
 
   $act.addActions([action]);
 
-  const mockFn = vi.fn();
+  const mockFn = jest.fn();
 
   $act.subscribe('SomeName', mockFn);
 
@@ -89,7 +112,7 @@ it('Example check subscription', async () => {
 | makeActionStub  | Create empty action for testing                                                   |
 | exec            | Execute action                                                                    |
 | subscribe       | Subscribes to action                                                              |
-| entityCount     | Returns the number of entities ('actions' \| 'watchers' \| 'listeners' \| 'di') \* |
+| entityCount     | Returns the number of entities ('actions' \| 'waiters' \| 'listeners' \| 'di') \* |
 | removeSingleton | Removes singleton ActMaster \*                                                    |
 
 > `*` -Use if you know what it's for

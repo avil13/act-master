@@ -124,7 +124,7 @@ If you use vue2 and classes, you can use the decorator to subscribe.
 ```html
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator';
-  import { ActSubscribe } from 'act-master';
+  import { ActSubscribe } from 'vue-act-master';
 
   @Component({})
   export default class MyVueComponent extends Vue {

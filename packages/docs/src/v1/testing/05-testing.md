@@ -17,7 +17,7 @@ Below, instead of an example action, you will be testing your action.
 
 ```ts
 // ... base settings
-import { ActTest } from 'act-master';
+import { ActTest } from 'vue-act-master'; // OR 'act-master';
 
 const $act = ActTest.getInstance();
 
@@ -49,7 +49,7 @@ You can also call some event and check your subscription.
 
 ```ts
 // ... base settings
-import { ActTest } from 'act-master';
+import { ActTest } from 'vue-act-master'; // OR 'act-master';
 
 const $act = ActTest.getInstance();
 

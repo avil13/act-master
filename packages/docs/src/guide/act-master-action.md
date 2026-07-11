@@ -1,3 +1,27 @@
+---
+title: ActMasterAction | Act-Master
+description: Learn how to write ActMasterAction — the core building block of Act-Master. Covers class, object, and function styles, DI, emit, watch, error handling, and validation.
+head:
+  - - meta
+    - name: description
+      content: Learn how to write ActMasterAction — the core building block of Act-Master. Covers class, object, and function styles, DI, emit, watch, error handling, and validation.
+  - - meta
+    - name: keywords
+      content: ActMasterAction, act-master action, dependency injection, emit action, watch action, cancel action, validate action, typescript action class
+  - - meta
+    - property: og:title
+      content: ActMasterAction | Act-Master
+  - - meta
+    - property: og:description
+      content: Learn how to write ActMasterAction — the core building block of Act-Master. Covers class, object, and function styles, DI, emit, watch, error handling, and validation.
+  - - meta
+    - property: og:url
+      content: https://avil13.github.io/act-master/guide/act-master-action
+  - - link
+    - rel: canonical
+      href: https://avil13.github.io/act-master/guide/act-master-action
+---
+
 # ActMasterAction
 
 
@@ -131,35 +155,26 @@ export class Login implements ActMasterAction {
   name = 'Login';
 
   @Emit()
-  private emit!: EmitAction;
+  $emit!: EmitAction;
 
   async exec(loginData: any): Promise<void> {
-    const result = await api.login(loginData);
-
-    // use another action
-    this.emit('SetAuthorized', true);
+    await api.login(loginData);
+    this.$emit('SetAuthorized', true);
   }
 }
 ```
-```ts [With method 'useEmit']
+```ts [Direct $emit]
 // login.act.ts
 import { ActMasterAction, EmitAction } from 'act-master';
 
 export class Login implements ActMasterAction {
   name = 'Login';
 
-  private emit!: EmitAction;
-
-   // set Emitter
-  private useEmit(emit: EmitAction) {
-    this.emit = emit;
-  }
+  $emit!: EmitAction; // injected by act-master
 
   async exec(loginData: any): Promise<void> {
-    const result = await api.login(loginData);
-
-    // use another action
-    this.emit('SetAuthorized', true);
+    await api.login(loginData);
+    this.$emit('SetAuthorized', true);
   }
 }
 ```
@@ -208,49 +223,45 @@ export class Login implements ActMasterAction {
   name = 'Login';
 
   @UseDI('api')
-  private api!: SuperAPI; // SuperAPI as interface
+  private api!: SuperAPI;
 
   async exec(loginData: any): Promise<void> {
     await this.api.login(loginData);
   }
 }
 ```
-```ts [With method 'useDI']
+```ts [Direct $di]
 // login.act.ts
 import { ActMasterAction } from 'act-master';
 
 export class Login implements ActMasterAction {
   name = 'Login';
 
-  private api!: SuperAPI; // SuperAPI as interface
-
-  // get DI scope
-  private useDI({ api }) {
-    this.api = api;
-  }
+  $di!: <T>(key: string) => T; // injected by act-master
 
   async exec(loginData: any): Promise<void> {
-    await this.api.login(loginData);
+    const api = this.$di<SuperAPI>('api');
+    await api.login(loginData);
   }
 }
 ```
 :::
 
 
-## errorHandlerEventName
+## $onError
 
-If an act completes with an error, errors can be handled with `errorHandlerEventName`.
+If an act completes with an error, errors can be handled with `$onError`.
 
-The `errorHandlerEventName` is the `name` of the act that will get an error if one occurs.
+`$onError` is the `name` of the act that will receive the error if one occurs.
 
-The `errorHandlerEventName` - can be set in the config, or for each `act` separately.
+It can be set globally in the config (`errorHandlerEventName`), or per action via `$onError`.
 
 ::: warning
-If you use `errorHandlerEventName`, the result of `act().exec(...)` will be null in case of an error.
+If error handling is configured, the result of `act().exec(...)` will be `null` in case of an error.
 :::
 
 ```ts
-act.init({
+act().init({
   // ...
   errorHandlerEventName: 'OnError',
 })
@@ -262,7 +273,7 @@ import { ActMasterAction } from 'act-master';
 export class Login implements ActMasterAction {
   name = 'Login';
 
-  // In case of an error, 'OnError' act will catch error
+  // In case of an error, 'OnError' act will catch it
   $onError = 'OnError';
 
   async exec(loginData: any): Promise<void> {
@@ -274,9 +285,9 @@ export class Login implements ActMasterAction {
 
 ## Watch
 
-You can launch the action after another one through the "watch" property.
+You can launch the action after another one through the `$watch` property.
 
-Any of the actions in `watch`, after execution, will call the current action.
+Any of the actions listed in `$watch`, after execution, will call the current action.
 
 ::: warning
 Be careful. The action should not follow itself.
@@ -295,7 +306,7 @@ export class FirstAction implements ActMasterAction {
 };
 
 export class SecondAction implements ActMasterAction {
-  // Names of events, after any of which this action automatically starts.
+  // Names of events after which this action automatically starts.
   $watch = ['FirstAction'];
 
   name = 'SecondAction';
@@ -331,11 +342,9 @@ export class GetData implements ActMasterAction {
 
 Before calling the [exec](exec-and-subscribe#exec) method, you can validate the arguments that are sent to it.
 
-We add a method `$validate` to which all arguments intended for `exec` get.
+Add a `$validate` method — it receives all arguments intended for `exec`.
 
-If they are valid we return `true`.
-
-Otherwise an error message of your choice.
+Return `true` if valid, or a `CancelledAct` with an error message otherwise.
 
 ```ts
 // validate-action.ts
@@ -343,7 +352,7 @@ Otherwise an error message of your choice.
 import { ActMasterAction, CancelledAct } from 'act-master';
 
 export class GetData implements ActMasterAction {
-  name = 'GetData';
+  name = 'GetData',
 
   $validate(arg?: any): true | CancelledAct {
     if (typeof arg !== 'number') {
@@ -357,8 +366,8 @@ export class GetData implements ActMasterAction {
     const url = `https://jsonplaceholder.typicode.com/todos/${id}`;
     const response = await fetch(url);
     return response.json();
-  }
-}
+  },
+};
 ```
 
 And try to exec
@@ -385,7 +394,7 @@ For example, you want to check authorization and if successful, display the resu
 
 Then, you can make the same call, in several places at once, but the request will be made only once.
 
-To do this, you need to specify the `isSingleExec` property in the act.
+To do this, set the `$isSingleton` property on the action.
 
 ```ts
 // check-auth.act.ts
@@ -410,7 +419,6 @@ Example of a testing with [ActTest](testing#actmaster-test-utils)
 ```ts
 // check-auth.spec.ts
 import { ActMasterAction, ActTest } from 'act-master';
-import { vi } from 'vitest';
 
 it('SinglePromise one call', async () => {
   // Arrange
@@ -426,7 +434,7 @@ it('SinglePromise one call', async () => {
     actions: [actionMock],
   });
 
-  const mockFn = vi.fn();
+  const mockFn = jest.fn();
 
   $act.subscribe('ACT_NAME', mockFn);
 

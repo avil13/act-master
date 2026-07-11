@@ -1,4 +1,6 @@
-:root .VPNav .title {
+/* Animation */
+:root .VPNav .title,
+.heading .name.clip {
   background: linear-gradient(
     -45deg,
     #3eaf7c,

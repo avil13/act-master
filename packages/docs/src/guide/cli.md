@@ -1,4 +1,28 @@
-# Act-Master-Cli
+---
+title: Act-Master CLI | Act-Master
+description: Use Act-Master CLI to auto-collect all actions, generate a typed index file, and keep type safety across your project. Zero runtime overhead.
+head:
+  - - meta
+    - name: description
+      content: Use Act-Master CLI to auto-collect all actions, generate a typed index file, and keep type safety across your project. Zero runtime overhead.
+  - - meta
+    - name: keywords
+      content: act-master-cli, code generation, actions index, typescript codegen, act-master-cli init, act-master-cli g
+  - - meta
+    - property: og:title
+      content: Act-Master CLI | Act-Master
+  - - meta
+    - property: og:description
+      content: Use Act-Master CLI to auto-collect all actions, generate a typed index file, and keep type safety across your project. Zero runtime overhead.
+  - - meta
+    - property: og:url
+      content: https://avil13.github.io/act-master/guide/cli
+  - - link
+    - rel: canonical
+      href: https://avil13.github.io/act-master/guide/cli
+---
+
+# Act-Master CLI
 
 Act's can be spread out in different folders. And it is not always convenient to keep track of them.
 
@@ -10,11 +34,9 @@ With it, you can:
 - Add strict typing and type substitution when you call them.
 - Check act's for type correctness.
 
-## Installation
-
-```bash
-npm install act-master-cli
-```
+::: tip
+`act-master-cli` is included as a dependency of `act-master` — no separate install needed.
+:::
 
 ## Configuration
 
