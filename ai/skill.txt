@@ -1,4 +1,4 @@
-# Act-Master — LLM Skill Reference
+# Act-Master - LLM Skill Reference
 
 > Frontend action architecture for Vue & React. Separates business logic
 > (actions) from view via a pub/sub bus. Works with Vue 3, Vue 2, React,
