@@ -31,7 +31,7 @@ aside: false
 layout: home
 
 hero:
-  name: "Act-Master"
+  name: 'Act-Master'
   text: Simplifying Frontend Application Development
   tagline: A frontend-way to separate business logic from application view.
   image:
@@ -49,7 +49,7 @@ hero:
       link: /guide/cli
     - theme: alt
       text: AI Agent Skill
-      link: /ai/skill.md
+      link: /ai/skill.md.md
 
 features:
   - title: Commander
