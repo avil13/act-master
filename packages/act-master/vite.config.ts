@@ -2,6 +2,14 @@ import { defineConfig } from 'vite';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  oxc: {
+    typescript: {
+      experimentalDecorators: true,
+    },
+    decorator: {
+      legacy: true,
+    },
+  },
   build: {
     minify: true,
     lib: {
