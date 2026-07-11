@@ -37,7 +37,8 @@ export default defineConfig({
 
     algolia: {
       appId: 'AQG3LF64RJ',
-      apiKey: '9f0fdad2d4a7100a6d70b1e8fa5a136c',
+      apiKey: '73ddbc792dc4a93356157a13984e7b4c',
+
       indexName: 'act-master',
     },
 
