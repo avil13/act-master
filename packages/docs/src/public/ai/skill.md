@@ -1,0 +1,142 @@
+# Act-Master — LLM Skill Reference
+
+> Frontend action architecture for Vue & React. Separates business logic
+> (actions) from view via a pub/sub bus. Works with Vue 3, Vue 2, React,
+> or Vanilla TypeScript.
+
+Docs: https://avil13.github.io/act-master/
+Repo: https://github.com/avil13/act-master
+
+## Install & Init
+
+```sh
+npm install act-master
+npx act-master-cli init   # creates .act-master.yaml, generates act/generated/actions.ts
+```
+
+`act-master-cli` ships as a dependency (codegen only, no runtime role). It scans
+`act/**/*.act.ts` files and aggregates them into an actions index.
+
+## Bootstrap
+
+```ts
+// Vue3 Composition API
+import { VueActMaster, type ActMasterOptions } from 'act-master/vue';
+import { actions } from '@/act/actions';
+const options: ActMasterOptions = { actions, errorHandlerEventName: 'OnError' };
+createApp(App).use(VueActMaster, options).mount('#app');
+
+// Function style (React / Vanilla)
+import { act, type ActMasterOptions } from 'act-master';
+act.init({ actions, errorHandlerEventName: 'OnError' });
+
+// Class style
+import { ActMaster } from 'act-master';
+const $act = new ActMaster({ actions, errorHandlerEventName: 'OnError' });
+```
+
+`ActMasterOptions`: `actions?`, `errorHandlerEventName?`, `di?` (DIMap), `autoUnsubscribeCallback?`.
+
+## Writing an Action (`*.act.ts`)
+
+An action = object implementing `ActMasterAction`: requires `name` (string) and
+`exec(...)` method. Place files under `act/` folders, one action per file.
+
+```ts
+// Class style (recommended — enables CLI codegen)
+import { ActMasterAction } from 'act-master';
+
+export class GetData implements ActMasterAction {
+  name = 'GetData';
+  async exec(id: string): Promise<unknown> {
+    const res = await fetch(url);
+    return res.json();
+  }
+}
+```
+
+## Calling & Subscribing
+
+```ts
+const result = await act().exec('GetData', id);   // exec: name + args -> Promise<result>
+
+act().subscribe('GetData', (data) => { /* ... */ });   // alias: on(...)
+const off = act().subscribe('GetData', cb);            // returned fn unsubscribes
+act().unsubscribe('GetData', cb);                       // alias: off(...)
+act().once('GetData', cb);                              // auto unsubscribe after first call
+
+// Bulk unsubscribe via key
+act().subscribe('A', cb, KEY);
+act().subscribe('B', cb, KEY);
+act().subsList.clear(KEY);
+```
+
+Always unsubscribe on component teardown to avoid leaks.
+
+## Action Features (properties on the action class)
+
+| Feature | Property/API | Purpose |
+|---|---|---|
+| Emit another action | `@Emit() $emit!: EmitAction` or plain `$emit!: EmitAction` | call `this.$emit('OtherName', payload)` to chain actions |
+| Dependency Injection | `@UseDI('key') private api!: T` or `this.$di<T>('key')` | access DI container entries registered via `di: { key: Impl }` |
+| Error handling | `$onError = 'OnError'` (or global `errorHandlerEventName`) | route thrown errors to another action; `exec()` resolves `null` on error |
+| Watch | `$watch = ['OtherAction']` | auto-run this action after any listed action completes |
+| Cancel chain | `return new CancelledAct('reason')` from `exec` | stops emit/watch chains; check with `CancelledAct.is(result)` |
+| Validation | `$validate(...args): true \| CancelledAct` | runs before `exec`; return `true` or a `CancelledAct` |
+| Singleton exec | `$isSingleton = true` | concurrent calls dedupe into a single in-flight execution |
+
+DI setup:
+```ts
+act.init({ actions, di: { api: SuperAPI } });
+// or
+act().setDI('api', SuperAPI);
+```
+
+## CLI (`act-master-cli`)
+
+Config file `.act-master.yaml` (created by `init`):
+```yaml
+config:
+  src: './src'
+  alias: '@'
+actionsPatterns:
+  - 'act/**/*.act.ts'
+generate:
+  actionsIndexFile: 'act/generated/actions.ts'
+  prefixText: '/* This is generated file */'
+```
+
+Run generation: `npx act-master-cli g` (add as `act:gen` npm script; optionally
+`postact:gen` runs eslint --fix on the generated file).
+
+## Testing (`ActTest`)
+
+```ts
+import { ActTest } from 'act-master';
+
+const $act = ActTest.getInstance(); // singleton test instance
+$act.addActions([{ name: 'SomeName', exec: () => 42 }]);
+await $act.exec('SomeName');
+expect(ActTest.getLastResult()).toBe(42);
+
+const mockFn = jest.fn();
+$act.subscribe('SomeName', mockFn);
+await ActTest.exec('SomeName');
+expect(mockFn).toBeCalledTimes(1);
+```
+
+Methods: `getInstance`, `resetAll`, `getLastResult`, `addActions`,
+`makeActionStub`, `exec`, `subscribe`, `entityCount`, `removeSingleton`.
+
+## Quick Checklist for Agents
+
+1. Business logic goes into `*.act.ts` files implementing `ActMasterAction`
+   (class style preferred for codegen). The files can be in the `act` folder next to the file where the call is made. Or in the `src/act/actions/` folder. It depends on whether the logic applies generally or to a single component.
+2. Never call APIs/logic directly from components — call `act().exec(name, ...args)`.
+3. Subscribe for reactive updates, always unsubscribe on cleanup.
+4. Use `$emit`/`$watch` to chain actions instead of manual orchestration.
+5. Use DI (`$di`/`@UseDI`) instead of importing concrete API implementations.
+6. Use `CancelledAct` to short-circuit chains/validation instead of throwing.
+7. After adding/moving `*.act.ts` files, run `act-master-cli g` to regenerate
+   the actions index.
+8. Write tests with `ActTest`, not by mocking the real `ActMaster` instance.

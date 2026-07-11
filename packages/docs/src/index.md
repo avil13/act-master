@@ -47,6 +47,9 @@ hero:
     - theme: alt
       text: CLI
       link: /guide/cli
+    - theme: alt
+      text: AI Agent Skill
+      link: /ai/skill.md
 
 features:
   - title: Commander
