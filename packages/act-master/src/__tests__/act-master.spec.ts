@@ -7,10 +7,6 @@ const $act = ActTest.getInstance();
 const addTestAction = addTestActionFactory($act);
 
 describe('ActMaster', () => {
-  beforeEach(() => {
-    ActTest.resetAll();
-  });
-
   // tests
   describe('Actions', () => {
     it('addActions', async () => {

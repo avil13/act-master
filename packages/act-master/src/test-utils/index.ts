@@ -5,27 +5,13 @@ import type { ActMasterAction, ActMasterOptions } from '../types';
 export type ActTestEntityCountKey = 'actions' | 'watchers' | 'listeners' | 'di';
 
 export class ActTest {
-  private static $act: ActMaster;
-
   private constructor(private $act: ActMaster) {}
 
   static getInstance(options: ActMasterOptions = {}): ActMaster & { readonly t: ActTest } {
-    //@ts-ignore
-    const oldInstance: ActMaster = ActMaster.instance;
-    //@ts-ignore
+    //@ts-ignore - ActMaster in prod is singleton
     ActMaster.instance = null;
 
-    if (ActTest.$act) {
-      ActTest.$act.clearActions();
-      ActTest.$act.clearListeners();
-      ActTest.$act.clearDI();
-    }
-
     const $act = act.init(options);
-    ActTest.$act = $act;
-
-    //@ts-ignore // TODO: remove in next major release
-    ActMaster.instance = oldInstance || $act;
 
     return Object.setPrototypeOf({ t: new ActTest($act) }, $act);
   }

@@ -5,8 +5,6 @@ const $act = ActTest.getInstance();
 
 describe('inProgress', () => {
   beforeAll(() => {
-    ActTest.resetAll();
-
     $act.addAction({
       name: 'getData',
       resolve: null,

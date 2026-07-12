@@ -22,9 +22,9 @@ import {
 //@ts-ignore
 import { version } from '../package.json';
 
+export * from './decorators/index';
 export * from './errors';
 export * from './types';
-export * from './decorators/index';
 export { CancelledAct };
 
 /**
@@ -150,6 +150,7 @@ export class ActMaster implements IActMaster {
     return this;
   }
 
+  /** @deprecated This feature is considered unsafe for use in production. */
   removeAction(eventName: ActEventName): void {
     if (!this._actions.has(eventName)) {
       throw new NotFoundActionError(eventName);
@@ -158,6 +159,7 @@ export class ActMaster implements IActMaster {
     this._actions.delete(eventName);
   }
 
+  /** @deprecated This feature is considered unsafe for use in production. */
   clearActions(): void {
     this._actions.clear();
   }
@@ -228,6 +230,10 @@ export class ActMaster implements IActMaster {
 
         return isValidOrError;
       }
+    }
+
+    if (!action.$emit) {
+      action.$emit = this.emit.bind(this);
     }
 
     try {

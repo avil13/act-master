@@ -1,19 +1,15 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { CancelledAct } from '../cancelled';
 import { ActTest } from '../test-utils';
 import { addTestActionFactory } from './test-helpers';
 
-const $act = ActTest.getInstance();
-
-const addTestAction = addTestActionFactory($act);
 
 describe('watch-prop', () => {
-  beforeEach(() => {
-    ActTest.resetAll();
-  });
-
-  // tests
   it('watch called after emit', async () => {
+    const $act = ActTest.getInstance();
+
+    const addTestAction = addTestActionFactory($act);
+
     const name1 = 'name1';
     const name2 = 'name2';
 
@@ -32,6 +28,10 @@ describe('watch-prop', () => {
   });
 
   it('watch NOT called after CANCELLED', async () => {
+    const $act = ActTest.getInstance();
+
+    const addTestAction = addTestActionFactory($act);
+
     const name1 = 'name1';
     const name2 = 'name2';
 
@@ -49,6 +49,6 @@ describe('watch-prop', () => {
 
     await $act.exec(name1);
 
-    expect(execMock).not.toBeCalled();
+    expect(execMock).not.toHaveBeenCalled();
   });
 });
