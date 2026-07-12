@@ -35,4 +35,10 @@ export class ActTest {
   makeActionStub(action?: Partial<ActMasterAction>): ActMasterAction {
     return { name: `Act_${Math.random()}`, exec: () => null, ...action };
   }
+
+  makeAndAddActionStub(action?: Partial<ActMasterAction>): ActMaster {
+    const act = this.makeActionStub(action);
+    this.$act.addAction(act);
+    return this.$act;
+  }
 }

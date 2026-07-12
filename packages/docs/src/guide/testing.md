@@ -28,11 +28,32 @@ head:
 
 `ActTest` - is a class that helps write tests for `act-master`.
 
-ActTest - is a singleton class with static methods.
+Use the static method to create a new `ActMaster` instance for writing tests.
 
-To write tests, use the method `ActTest.getInstance(options?: ActMasterOptions)`.
+```ts
+const $act = ActTest.getInstance(options?: ActMasterOptions);
+```
 
-It creates an instance of the `act-master` class, which can be easily used afterwards.
+It will have an additional property `t` that helps with testing. (`$act.t`)
+
+```ts
+// Create a new test act
+const testAct = $act.t.makeActionStub({ name: 'HelloTest1' })
+$act.addAction(testAct);
+
+// Create a new test act and add it immediately
+$act.t.makeAndAddActionStub({ name: 'HelloTest2' })
+
+// testing
+$act.exec('HelloTest1');
+$act.exec('HelloTest2');
+
+// Get the count of entities of a specific type
+$act.t.entityCount('actions')
+$act.t.entityCount('watchers')
+$act.t.entityCount('listeners')
+$act.t.entityCount('di')
+```
 
 Below, instead of an example action, you will be testing your action.
 
@@ -46,7 +67,7 @@ import { ActTest } from 'act-master';
 it('Example result', async () => {
   const $act = ActTest.getInstance();
 
-  // Arrange
+  // Arrange - import your action that you want to test
   const action: ActMasterAction = {
     name: 'SomeName',
     exec() {
@@ -78,6 +99,7 @@ it('Example check subscription', async () => {
   // Arrange
   const $act = ActTest.getInstance();
 
+  // Arrange - import your action that you want to test
   const action: ActMasterAction = {
     name: 'SomeName',
     exec() {
@@ -87,7 +109,7 @@ it('Example check subscription', async () => {
 
   $act.addActions([action]);
 
-  const mockFn = jest.fn();
+  const mockFn = vi.fn();
 
   $act.subscribe('SomeName', mockFn);
 
@@ -103,18 +125,11 @@ it('Example check subscription', async () => {
 
 ## List of available methods
 
-| Method Name     | Description                                                                       |
-| --------------- | --------------------------------------------------------------------------------- |
-| getInstance     | Returns the ActMaster instance                                                    |
-| resetAll        | Resets the ActMaster settings                                                     |
-| getLastResult   | Returns the last value                                                            |
-| addActions      | Adds actions                                                                      |
-| makeActionStub  | Create empty action for testing                                                   |
-| exec            | Execute action                                                                    |
-| subscribe       | Subscribes to action                                                              |
-| entityCount     | Returns the number of entities ('actions' \| 'waiters' \| 'listeners' \| 'di') \* |
-| removeSingleton | Removes singleton ActMaster \*                                                    |
-
-> `*` -Use if you know what it's for
+| Method Name          | Description                                                                       |
+|----------------------|-----------------------------------------------------------------------------------|
+| getInstance          | Returns the ActMaster instance                                                    |
+| makeActionStub | Creates a stub action without adding it to the instance |
+| makeAndAddActionStub | Creates a stub action and immediately adds it to the instance |
+| entityCount          | Returns the number of entities ('actions' \| 'waiters' \| 'listeners' \| 'di') \* |
 
 More examples in [repo](https://github.com/avil13/act-master/tree/master/packages/act-master/src/__tests__)
