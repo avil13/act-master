@@ -22,11 +22,9 @@ import {
 //@ts-ignore
 import { version } from '../package.json';
 
-import { migrationHelper } from './utils/migration-helper';
-
+export * from './decorators/index';
 export * from './errors';
 export * from './types';
-export * from './decorators/index';
 export { CancelledAct };
 
 /**
@@ -131,7 +129,11 @@ export class ActMaster implements IActMaster {
       action.useEmit(bindedEmitter);
     }
 
-    migrationHelper(action);
+    // TODO: inlined from migration-helper.ts — remove in v3
+    if ((action as any).watch && !action.$watch) action.$watch = (action as any).watch;
+    if ((action as any).isSingleExec && typeof action.$isSingleton !== 'boolean') action.$isSingleton = (action as any).isSingleExec;
+    if (typeof (action as any).validateInput === 'function' && !action.$validate) action.$validate = (action as any).validateInput.bind(action);
+    if ((action as any).errorHandlerEventName && !action.$onError) action.$onError = (action as any).errorHandlerEventName;
 
     this._actions.set(eventName, action);
 
@@ -148,6 +150,7 @@ export class ActMaster implements IActMaster {
     return this;
   }
 
+  /** @deprecated This feature is considered unsafe for use in production. */
   removeAction(eventName: ActEventName): void {
     if (!this._actions.has(eventName)) {
       throw new NotFoundActionError(eventName);
@@ -156,6 +159,7 @@ export class ActMaster implements IActMaster {
     this._actions.delete(eventName);
   }
 
+  /** @deprecated This feature is considered unsafe for use in production. */
   clearActions(): void {
     this._actions.clear();
   }
@@ -226,6 +230,10 @@ export class ActMaster implements IActMaster {
 
         return isValidOrError;
       }
+    }
+
+    if (!action.$emit) {
+      action.$emit = this.emit.bind(this);
     }
 
     try {

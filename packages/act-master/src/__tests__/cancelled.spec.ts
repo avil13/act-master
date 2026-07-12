@@ -20,10 +20,6 @@ describe('CancelledAct as object', () => {
 });
 
 describe('CancelledAct with action', () => {
-  beforeEach(() => {
-    ActTest.resetAll();
-  });
-
   // tests
   it('cancel action', async () => {
     const { eventName } = addTestAction({

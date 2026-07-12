@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ActTest } from '../test-utils';
 import { addTestActionFactory } from './test-helpers';
 
@@ -7,10 +7,6 @@ const $act = ActTest.getInstance();
 const addTestAction = addTestActionFactory($act);
 
 describe('Act validator', () => {
-  afterEach(() => {
-    ActTest.resetAll();
-  });
-
   it('validate input args', async () => {
     const { eventName, execMock } = addTestAction({
       validateInput(arg1?: any): true | string {
@@ -27,7 +23,7 @@ describe('Act validator', () => {
 
     // valid
     await $act.exec(eventName, 100);
-    expect(execMock).toBeCalledWith(100);
+    expect(execMock).toHaveBeenCalledWith(100);
   });
 
   it('catch exception if invalid', async () => {

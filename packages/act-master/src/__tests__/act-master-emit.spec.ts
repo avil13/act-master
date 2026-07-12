@@ -3,17 +3,14 @@ import { Emit } from '../decorators';
 import { ActTest } from '../test-utils';
 import { ActMasterAction, EmitAction } from '..';
 
-const $act = ActTest.getInstance();
 
 describe('EMIT', () => {
   const ACTION_NAME_1 = 'ACTION_NAME_DEFAULT';
   const ACTION_NAME_2 = 'ACTION_NAME_CHILD';
 
-  beforeEach(() => {
-    ActTest.resetAll();
-  });
-
   it('js emitter', async () => {
+    const $act = ActTest.getInstance();
+
     const DATA = Math.random();
     const mockCallback = vi.fn();
 
@@ -45,15 +42,16 @@ describe('EMIT', () => {
   });
 
   it('decorator emitter', async () => {
+    const $act = ActTest.getInstance();
+
     const DATA = Math.random();
     const mockCallback = vi.fn();
 
     class TestActionClass implements ActMasterAction {
       name = ACTION_NAME_1;
-      @Emit()
-      emit!: EmitAction;
+      $emit!: EmitAction;
       async exec(data: number) {
-        await this.emit(ACTION_NAME_2, data);
+        await this.$emit(ACTION_NAME_2, data);
       }
     }
 

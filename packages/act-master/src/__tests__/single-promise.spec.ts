@@ -2,14 +2,11 @@ import { ActMasterAction } from '..';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ActTest } from '../test-utils';
 
-const $act = ActTest.getInstance();
-
-afterEach(() => {
-  ActTest.resetAll();
-});
 
 describe('SinglePromise', () => {
   it('one instance', async () => {
+    const $act = ActTest.getInstance();
+
     const action: ActMasterAction = {
       isSingleExec: true, // prop for single exec
       name: 'ACT_NAME_ONE',
@@ -35,6 +32,8 @@ describe('SinglePromise', () => {
   });
 
   it('many instance', async () => {
+    const $act = ActTest.getInstance();
+
     const action: ActMasterAction = {
       name: 'ACT_NAME_TWO',
       async exec(val: number) {

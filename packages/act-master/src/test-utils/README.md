@@ -72,9 +72,9 @@ it('Example check subscription', async () => {
 
   expect(mockFn).toBeCalledTimes(1);
 
-  expect($act.t.entityCount('actions')).toBe(1)
-  expect($act.t.entityCount('watchers')).toBe(0)
-  expect($act.t.entityCount('listeners')).toBe(1)
+  expect($act.entityCount('actions')).toBe(1)
+  expect($act.entityCount('watchers')).toBe(0)
+  expect($act.entityCount('listeners')).toBe(1)
 });
 ```
 

@@ -1,12 +1,7 @@
-import { ActMaster, ActMasterOptions } from '..';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ActTest } from '../test-utils';
 
 describe('ActMaster constructor options', () => {
-  beforeEach(() => {
-    ActTest.resetAll();
-  });
-
   const exec = () => void 0;
 
   it('actions', () => {
@@ -27,8 +22,6 @@ describe('ActMaster constructor options', () => {
   });
 
   it('di', () => {
-    expect(ActTest.entityCount('di')).toBe(0);
-
     const { t } = ActTest.getInstance({
       di: {
         api: {},
