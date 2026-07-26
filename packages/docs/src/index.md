@@ -49,7 +49,7 @@ hero:
       link: /guide/cli
     - theme: alt
       text: AI Agent Skill
-      link: /ai/skill.txt
+      link: /act-master/ai/skill.txt
 
 features:
   - title: Commander
