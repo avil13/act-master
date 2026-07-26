@@ -50,6 +50,7 @@ hero:
     - theme: alt
       text: AI Agent Skill
       link: /act-master/ai/skill.txt
+      target: _blank
 
 features:
   - title: Commander
