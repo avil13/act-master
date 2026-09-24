@@ -12,7 +12,7 @@ export default defineConfig({
   base: baseUrl,
   head: getHead(),
   sitemap: {
-    hostname: siteUrl,
+    hostname: `${siteUrl}/`,
   },
   markdown: {
     headers: false,
@@ -39,7 +39,7 @@ export default defineConfig({
       appId: 'AQG3LF64RJ',
       apiKey: '73ddbc792dc4a93356157a13984e7b4c',
 
-      indexName: 'act-master',
+      indexName: 'Act Master',
     },
 
     nav: [
@@ -55,8 +55,14 @@ export default defineConfig({
           { text: 'Composition API', link: '/v1/action/05-composition-api' },
           { text: 'Testing', link: '/v1/testing/05-testing' },
           { text: 'subsList', link: '/v1/advanced/06-subsList' },
-          { text: 'Single Execution', link: '/v1/advanced/07-single-execution' },
-          { text: 'Emit Many Results', link: '/v1/advanced/08-emit-many-results' },
+          {
+            text: 'Single Execution',
+            link: '/v1/advanced/07-single-execution',
+          },
+          {
+            text: 'Emit Many Results',
+            link: '/v1/advanced/08-emit-many-results',
+          },
           { text: 'fn2act', link: '/v1/advanced/09-function-to-action' },
           { text: 'WebSocket', link: '/v1/tips/web-socket' },
         ],
@@ -110,18 +116,39 @@ function getHead(): HeadConfig[] {
       },
     ],
     ['meta', { name: 'theme-color', content: '#3c8772' }],
-    ['meta', { name: 'keywords', content: 'act-master, vue, react, typescript, frontend architecture, business logic, pub/sub, actions, dependency injection, state management, testing' }],
+    [
+      'meta',
+      {
+        name: 'keywords',
+        content:
+          'act-master, vue, react, typescript, frontend architecture, business logic, pub/sub, actions, dependency injection, state management, testing',
+      },
+    ],
 
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:site_name', content: 'Act-Master' }],
     ['meta', { property: 'og:title', content: 'Act-Master' }],
-    ['meta', { property: 'og:description', content: 'A frontend-way to separate business logic from application view.' }],
+    [
+      'meta',
+      {
+        property: 'og:description',
+        content:
+          'A frontend-way to separate business logic from application view.',
+      },
+    ],
     ['meta', { property: 'og:image', content: `${siteUrl}/apple.png` }],
     ['meta', { property: 'og:url', content: `${siteUrl}/` }],
 
     ['meta', { name: 'twitter:card', content: 'summary' }],
     ['meta', { name: 'twitter:title', content: 'Act-Master' }],
-    ['meta', { name: 'twitter:description', content: 'A frontend-way to separate business logic from application view.' }],
+    [
+      'meta',
+      {
+        name: 'twitter:description',
+        content:
+          'A frontend-way to separate business logic from application view.',
+      },
+    ],
     ['meta', { name: 'twitter:image', content: `${siteUrl}/apple.png` }],
   ];
 }

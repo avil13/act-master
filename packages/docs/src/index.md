@@ -49,7 +49,7 @@ hero:
       link: /guide/cli
     - theme: alt
       text: AI Agent Skill
-      link: /act-master/ai/skill.txt
+      link: /act-master/llm.txt
       target: _blank
 
 features:
