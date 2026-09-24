@@ -34,6 +34,12 @@ With it, you can:
 - Add strict typing and type substitution when you call them.
 - Check act's for type correctness.
 
+The CLI collects named exported action classes and exported `fn2act` /
+`functionToAction` calls from the configured files. See
+[typed function actions](act-master-action#typed-function-actions) for an example.
+Keep one action per file; if a file has an action class, class discovery takes
+precedence. Plain object actions still require manual registration.
+
 ::: tip
 `act-master-cli` is included as a dependency of `act-master` — no separate install needed.
 :::

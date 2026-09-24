@@ -11,7 +11,9 @@ import { normalizePathAlias } from '../alias-helper';
 
 const configManager = new ConfigManager();
 
-const getClassName = (item: IFilteredItem): string => {
+const getImportName = (item: IFilteredItem): string => {
+  if (item.kind === 'function') return item.exportName;
+
   const classDeclaration = item.classDeclaration;
 
   const name = classDeclaration.getName();
@@ -24,8 +26,13 @@ const getClassName = (item: IFilteredItem): string => {
 };
 
 const getInitializer = (item: IFilteredItem): string => {
-  const className = getClassName(item);
-  return `new ${className}()`;
+  const importName = getImportName(item);
+  if (item.kind === 'function') {
+    // TypeScript widens Function.name to string. Preserve the source name both
+    // in the generated types and in the registered instance.
+    return `Object.assign(${importName}, { name: ${JSON.stringify(item.actionName)} as const })`;
+  }
+  return `new ${importName}()`;
 };
 
 const getInitializerList = (items: IFilteredItem[]) => {
@@ -38,20 +45,15 @@ export const getImportDeclarations = (
   config: ActCliConfig
 ): OptionalKind<ImportDeclarationStructure>[] => {
   return items.map((item) => {
-    const className = getClassName(item);
+    const importName = getImportName(item);
     const moduleSpecifier = normalizePathAlias(
       item.sourceFile.getFilePath(),
       config
     );
 
-    return {
-      namedImports: [
-        {
-          name: className,
-        },
-      ],
-      moduleSpecifier,
-    };
+    return item.kind === 'function' && item.isDefaultExport
+      ? { defaultImport: importName, moduleSpecifier }
+      : { namedImports: [{ name: importName }], moduleSpecifier };
   });
 };
 

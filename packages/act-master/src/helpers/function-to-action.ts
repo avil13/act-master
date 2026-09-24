@@ -1,8 +1,12 @@
-import { ActMasterAction } from '../types';
+import type { ActMasterAction } from '../types';
 
-export const functionToAction = (
-  func: (...args: any[]) => any
-): ActMasterAction => {
+interface FunctionAction<F extends (...args: any[]) => any> extends ActMasterAction {
+  exec: F;
+}
+
+export const functionToAction = <F extends (...args: any[]) => any>(
+  func: F
+): FunctionAction<F> => {
   if (typeof func !== 'function' || !func.name) {
     throw new Error(`Pass not valid function: "${func}"`);
   }

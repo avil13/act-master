@@ -63,7 +63,7 @@ Generate before type checking/building, and after adding, moving, renaming, or
 changing the signature of an act. Import from the actual configured output path
 (`@/act/generated/actions` here), not a guessed `@/act/actions` path.
 
-CLI-compatible actions have:
+CLI-compatible class actions have:
 
 - One named exported action class per matched file, with a `name` property and an
   `exec` method declared on the class. The CLI imports it by name and calls
@@ -201,10 +201,29 @@ requires a build pipeline supporting legacy decorators, with
 works. In 2.8.4 `$di` appears in the interface but is not injected by the runtime;
 declaring `$di!` alone will not work. No BaseActMasterAction class is exported.
 
-Objects implementing ActMasterAction and `fn2act(namedFunction)` also work with
-manual registration. The CLI scans classes, so these forms are not collected
-automatically. Explicit names are preferable to function-derived names when
-minification could rename a function.
+The CLI also collects exported fn2act / functionToAction calls imported from
+act-master, including import aliases. For example:
+
+```ts
+// src/act/get-balance.act.ts
+import { fn2act } from 'act-master';
+
+export const getBalance = fn2act(function GetBalance(day: string): number {
+  return day === '2026.01.01' ? 100 : 0;
+});
+```
+
+After generation and registration, act().exec('GetBalance', '2026.01.01') has type
+Promise<number | null>; 'GetBal' or a numeric day is a type error. The event name
+comes from the function, not the export variable. Default exports wrapping a
+named function and references to functions declared in the same file also work.
+Keep explicit parameter/return types and one action per file; class discovery
+takes precedence when a file also contains an action class. The helper preserves
+the exec signature; the CLI supplies the literal name that TypeScript cannot
+infer from Function.name. Without the generated registry, its name is string.
+Plain object actions require manual registration. Bare unexported helper calls
+are not collected. Preserve function names when minifying (e.g. esbuild keepNames)
+because the helper rejects anonymous functions before the registry executes.
 
 ## Execute and distinguish every outcome
 
