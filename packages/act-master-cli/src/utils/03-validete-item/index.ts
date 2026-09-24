@@ -7,6 +7,7 @@ export enum ActValidationError {
   wrongNameType = 'WRONG NAME TYPE',
   noReturnTypeExec = 'NO RETURN TYPE EXEC',
   noReturnTypeTransform = 'NO RETURN TYPE TRANSFORM',
+  invalidFunctionAction = 'INVALID FUNCTION ACTION',
 }
 
 export class ValidateError extends Error {
@@ -17,7 +18,9 @@ export class ValidateError extends Error {
   constructor(item: IFilteredItem, type: ActValidationError) {
     super();
     this.filePath = item.sourceFile.getFilePath();
-    this.className = item.classDeclaration.getName() || '';
+    this.className = item.kind === 'class'
+      ? item.classDeclaration.getName() || ''
+      : item.actionName || item.exportName;
     this.type = type;
 
     this.message = formatErrorMessage(this.className, this.type, this.filePath);
@@ -25,49 +28,44 @@ export class ValidateError extends Error {
 }
 
 export const validateItem = (item: IFilteredItem): ValidateError | true => {
-  const { classDeclaration } = item;
+  if (item.kind === 'function' && (!item.functionDeclaration || !item.actionName)) {
+    throw new ValidateError(item, ActValidationError.invalidFunctionAction);
+  }
 
-  const execStr = classDeclaration.getInstanceMethod('exec')?.getStructure();
+  const classDeclaration = item.kind === 'class' ? item.classDeclaration : undefined;
+  const execDeclaration = item.kind === 'class'
+    ? item.classDeclaration.getInstanceMethod('exec')
+    : item.functionDeclaration;
 
-  if (!execStr) {
+  if (!execDeclaration) {
     throw new ValidateError(item, ActValidationError.noExecMethod);
   }
 
   // no arg types
-  const params =
-    execStr.parameters?.map(({ name, type, initializer }) => ({
-      name,
-      type,
-      initializer,
-    })) || [];
-
-  params.forEach((p) => {
-    if (p.type === undefined && typeof p.initializer === 'undefined') {
+  execDeclaration.getParameters().forEach((parameter) => {
+    if (!parameter.getTypeNode() && !parameter.getInitializer()) {
       throw new ValidateError(item, ActValidationError.emptyArgumentsType);
     }
   });
 
   // name === string
-  const nameProp = classDeclaration.getProperty('name');
+  const nameProp = classDeclaration?.getProperty('name');
   const isStringLiteral = nameProp
     ?.getInitializer()
     ?.getType()
     .isStringLiteral();
 
-  if (!isStringLiteral) {
+  if (item.kind === 'class' && !isStringLiteral) {
     throw new ValidateError(item, ActValidationError.wrongNameType);
   }
 
   // return type exec !== undefined
-  const execMethodDecl = classDeclaration.getMethod('exec');
-  const execReturnType = execMethodDecl?.getStructure().returnType;
-
-  if (execReturnType === undefined) {
+  if (!execDeclaration.getReturnTypeNode()) {
     throw new ValidateError(item, ActValidationError.noReturnTypeExec);
   }
 
   // return type transform is undefined or any
-  const transformMethodDecl = classDeclaration.getMethod('transform');
+  const transformMethodDecl = classDeclaration?.getMethod('transform');
   if (transformMethodDecl) {
     const transformReturnType = transformMethodDecl?.getStructure().returnType;
 
