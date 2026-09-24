@@ -1,0 +1,485 @@
+---
+name: act-master
+description: Install and use act-master in TypeScript applications. Apply when creating, calling, organizing, testing, or debugging actions, including Vue integration, dependency injection, subscriptions, validation, and error handling.
+---
+
+# Act-Master development skill
+
+Act-Master separates application use cases (actions, also called acts) from the
+view. Its core works without a framework; Vue integration is a separate import.
+This reference targets act-master 2.8.4 and act-master-cli 1.4.1 in this repository.
+For other versions, check the installed exports and implementation first.
+
+## Start with the existing application
+
+- Inspect package.json, the lockfile, .act-master.yaml, the application bootstrap,
+  and nearby actions. Follow the project's package manager and naming conventions.
+- Use `act-master` for the core, `act-master/vue` for Vue integration, and
+  `act-master/test` for test helpers. Do not mix examples from the old
+  `vue-act-master` package or the documentation's `/v1/` section into new code.
+- Reuse the existing initialization, registry, services, and error policy. Add
+  only the actions needed for the requested use case.
+
+## Install and generate the registry
+
+Run from the application root containing package.json and .act-master.yaml:
+
+```sh
+npm install act-master
+npx act-master-cli init
+```
+
+The CLI is included as a dependency; it is a development tool, not an application
+runtime import. `init` is interactive: it creates the config and can add an
+`act:gen` script and `src/act/common/OnError.act.ts`. It does not generate the
+registry. Keep an existing config instead of running init over it. The CLI
+declares Node.js >=20; also respect the application's runtime requirements.
+
+Example config supporting both shared and feature-local actions:
+
+```yaml
+config:
+  src: './src'
+  alias: '@/'
+actionsPatterns:
+  - '**/act/**/*.act.ts'
+generate:
+  actionsIndexFile: 'act/generated/actions.ts'
+  prefixText: '/* This is a generated file. Do not edit manually. */'
+```
+
+The default pattern is `act/**/*.act.ts`, which only covers the top-level act
+folder under src. Extend it when placing acts inside features. The alias must
+also resolve in TypeScript and the bundler; the CLI does not configure them.
+Run generation from the config directory: this CLI resolves src against the
+working directory, even when it finds the config in a parent directory.
+
+```sh
+npx act-master-cli g
+```
+
+For repeatable local and CI use, add `"act:gen": "act-master-cli g"` to scripts.
+Generate before type checking/building, and after adding, moving, renaming, or
+changing the signature of an act. Import from the actual configured output path
+(`@/act/generated/actions` here), not a guessed `@/act/actions` path.
+
+CLI-compatible actions have:
+
+- One named exported action class per matched file, with a `name` property and an
+  `exec` method declared on the class. The CLI imports it by name and calls
+  `new ClassName()`; required constructor arguments need manual registration.
+- A literal event name, preferably `readonly name = 'GetUser'`. Do not widen it
+  to `string`. Event names must be unique across the whole application; class
+  names imported into the generated registry must also be unambiguous.
+- Explicit parameter types and an explicit return type on `exec`. Use precise
+  domain types, including cancellation when applicable.
+
+The generated file includes instances and TypeScript module augmentation for
+event names, arguments, results, subscriptions, and the `$act` proxy. Keep it in
+the TypeScript program. Do not edit generated overloads or widen the inferred
+actions array to `ActMasterAction[]`, which loses the concrete action types.
+
+## Place logic according to ownership
+
+```text
+src/
+  main.ts                         # composition root: services + plugin setup
+  services/users-api.ts            # transport adapter and UsersApi contract
+  act/
+    common/OnError.act.ts          # application-wide error handling
+    generated/actions.ts          # generated registry, no business logic
+  features/users/
+    act/GetUser.act.ts            # use case owned by the users feature
+    components/UserProfile.vue    # input, rendering, local UI state
+```
+
+Place feature-specific acts beside their feature or component in an act folder.
+Place reusable cross-feature acts in src/act. Runtime registration does not
+require a particular folder; the generator's configured patterns determine
+discovery. Preserve an established layout rather than moving unrelated files.
+
+Keep each act focused on one application operation. Put transport details in
+service adapters and reusable pure calculations in ordinary functions. Components
+call acts and render their results; they retain presentation state such as open
+dialogs or loading indicators. An action does not need to wrap every UI change.
+Use a store when persistent shared state is needed: subscriptions are events,
+not a replaying state store.
+
+## Initialize once at the composition root
+
+Vue 3 example (App and usersApi are application-owned modules):
+
+```ts
+// src/main.ts
+import { createApp } from 'vue';
+import { VueActMaster, type ActMasterOptions } from 'act-master/vue';
+import App from './App.vue';
+import { actions } from '@/act/generated/actions';
+import { usersApi } from '@/services/users-api';
+
+const options: ActMasterOptions = {
+  actions,
+  di: { usersApi },
+  errorHandlerEventName: 'OnError', // this act must exist in actions
+};
+
+createApp(App).use(VueActMaster, options).mount('#app');
+```
+
+For React or vanilla TypeScript, use the same options with
+`import { act } from 'act-master'; act.init(options);` before application code
+calls `act()`. For a class-style entry point, `new ActMaster(options)` returns
+the instance to retain and use. Only `act.init(...)` assigns the function helper's
+instance; a standalone constructor call does not initialize `act()`.
+
+ActMaster is a singleton per loaded module. Repeated constructor/init calls reuse
+the existing instance and do not reconfigure its options. Do not initialize in
+components, action constructors, or per operation. Register additional actions
+with `act().addAction(instance)` or `act().addActions(instances)` only when needed;
+register each name once. Avoid importing the generated registry back into actions,
+which creates an initialization cycle.
+
+For SSR/multiple apps, do not assume a fresh ActMaster per request or mount. The
+module-level singleton can share services and data across requests. In a client
+application with SSR, initialize on the client; server-side use needs an explicit
+isolation design rather than repeated `new ActMaster()` calls.
+
+## Write a typed action and supply dependencies
+
+The application adapter implements this contract and exports its `usersApi`
+instance. It handles HTTP status checks, response validation, and transport errors.
+
+```ts
+// src/services/users-api.ts (contract; supply an implementation in this module)
+export interface User {
+  id: string;
+  name: string;
+}
+
+export interface UsersApi {
+  getUser(id: string): Promise<User>;
+}
+```
+
+```ts
+// src/features/users/act/GetUser.act.ts
+import { act, CancelledAct, type ActMasterAction } from 'act-master';
+import type { User, UsersApi } from '@/services/users-api';
+
+export class GetUser implements ActMasterAction {
+  readonly name = 'GetUser';
+
+  $validate(id: string): true | CancelledAct {
+    return id.trim()
+      ? true
+      : new CancelledAct('User ID is required', { id: 'Required' });
+  }
+
+  async exec(id: string): Promise<User | CancelledAct> {
+    const api = act().getDI<UsersApi>('usersApi');
+    return api.getUser(id);
+  }
+}
+```
+
+Use runtime validation appropriate to the input boundary; TypeScript annotations
+do not validate external data. `$validate` receives the same arguments as exec
+and may be async. Only `true` permits execution. Return a CancelledAct for an
+expected validation failure, and include it in exec's declared result union:
+generated result types are derived from exec, not from $validate.
+
+DI stores the values you supply. Pass a service instance or object, not a class
+unless the action intentionally consumes the constructor/static API. Register
+dependencies before execution via `di` or `act().setDI(key, value)`. `getDI<T>`
+is a type assertion at the boundary, not a runtime check; a missing key returns
+undefined. Treat setDI as registration, not a service replacement API.
+
+In projects using legacy TypeScript decorators, `@UseDI('usersApi') private
+api!: UsersApi` is another supported option (`UseDI` is from `act-master`). It
+requires a build pipeline supporting legacy decorators, with
+`experimentalDecorators: true`. Without decorators, the getDI example above
+works. In 2.8.4 `$di` appears in the interface but is not injected by the runtime;
+declaring `$di!` alone will not work. No BaseActMasterAction class is exported.
+
+Objects implementing ActMasterAction and `fn2act(namedFunction)` also work with
+manual registration. The CLI scans classes, so these forms are not collected
+automatically. Explicit names are preferable to function-derived names when
+minification could rename a function.
+
+## Execute and distinguish every outcome
+
+`act().exec('GetUser', id)` always returns a Promise. The first argument is the
+action's `name`, not its class name or filename. `$act.GetUser(id)` is equivalent
+when importing `$act` from `act-master`; generated types make both forms typed.
+In Vue Options API, the installed plugin also exposes `this.$act.exec(...)`.
+
+Call through the dispatcher in application code. Calling `new GetUser().exec()`
+directly skips validation, notifications, error routing, and execution controls.
+
+| Outcome | Caller observes | Subscriptions / $watch for the original act |
+| --- | --- | --- |
+| Normal return | Returned value, including undefined for void | Notified with that value |
+| Return CancelledAct from exec | The cancellation object | Not notified |
+| $validate returns CancelledAct | The cancellation object; exec is skipped | Not notified |
+| Throw/reject with configured handler | null | Not notified of success |
+| Throw/reject without a handler | Rejected Promise | Not notified of success |
+| Unknown action name | Rejected Promise (NotFoundActionError) | No action runs; global handler does not handle this error |
+
+Reserve null for handled failure where possible. An act that deliberately returns
+null succeeds and notifies listeners, so its caller cannot distinguish that value
+from a handled error using null alone. A void success is undefined: avoid
+`if (!result)` as a generic failure check because 0, false, and empty strings can
+also be valid results.
+
+```ts
+// Inside Vue setup; the application is already initialized.
+import { ref } from 'vue';
+import { act, CancelledAct } from 'act-master';
+import type { User } from '@/services/users-api';
+
+const user = ref<User | null>(null);
+const loading = ref(false);
+const message = ref('');
+
+async function loadUser(id: string): Promise<void> {
+  if (loading.value) return;
+  loading.value = true;
+  message.value = '';
+  try {
+    const result = await act().exec('GetUser', id);
+    if (result === null) return; // handled by the configured error action
+    if (result instanceof CancelledAct) {
+      message.value = result.reason;
+      return;
+    }
+    user.value = result;
+  } catch (error: unknown) {
+    // Covers errors without a handler, including a registration mistake.
+    message.value = error instanceof Error ? error.message : 'Unable to load user';
+  } finally {
+    loading.value = false;
+  }
+}
+```
+
+`CancelledAct.is(value)` also recognizes marker-based cancellations, including
+those constructed from an Error. It currently returns boolean, not a TypeScript
+type predicate. Use a typed wrapper when you need that broader check and type
+narrowing together. `instanceof` above is sufficient for the plain CancelledAct
+instances created by the example.
+
+## Handle errors deliberately
+
+Register the handler like any other act, then set global `errorHandlerEventName`
+or per-action `$onError = 'OnError'`. A local $onError takes precedence for thrown
+errors. Handlers receive the error value, not the original argument list or an
+automatic action-name envelope; add domain context when constructing an Error.
+
+```ts
+// src/act/common/OnError.act.ts
+import { CancelledAct, type ActMasterAction } from 'act-master';
+
+export class OnError implements ActMasterAction {
+  readonly name = 'OnError';
+
+  exec(error: unknown): void {
+    if (CancelledAct.is(error)) return; // field feedback belongs to the caller
+    console.error('[ActMaster]', error); // replace with the app's reporting service
+  }
+}
+```
+
+- For expected cancellation, return CancelledAct; throwing it enters exception
+  routing instead. Returning it from exec does not invoke error handlers.
+- Validation is a distinct path in 2.8.4: a non-true $validate result is returned
+  unchanged and sent to BOTH global and local handlers when configured, even if
+  both names are equal. Avoid duplicate reporting; normalize/ignore validation
+  cancellations in handlers as appropriate.
+- Error-handler actions are started without awaiting their completion. The
+  original call returns null, not the handler's return value. Do not use a handler
+  as an awaited fallback/recovery function. Perform required recovery explicitly
+  inside the action instead.
+- Handlers should complete reliably, contain failures of their own reporting
+  calls, and avoid recursive error-action cycles. A missing handler is a registry
+  bug, not a successful recovery.
+- Let unexpected service errors reach the chosen error policy. Catch locally when
+  adding context or performing meaningful recovery, not to return a fake success.
+  For fetch adapters, check response.ok: HTTP errors do not reject fetch by default.
+
+## Compose actions, cancellation, and concurrency
+
+Call another act through `act().exec(...)` and await it when the next step
+requires its result. This also keeps generated types and execution controls on
+the public dispatch path:
+
+```ts
+// src/features/users/act/GetUserName.act.ts
+import { act, CancelledAct, type ActMasterAction } from 'act-master';
+
+export class GetUserName implements ActMasterAction {
+  readonly name = 'GetUserName';
+  async exec(id: string): Promise<string | CancelledAct> {
+    const result = await act().exec('GetUser', id);
+    if (result === null) {
+      return new CancelledAct('GetUser failed and its error was handled');
+    }
+    if (result instanceof CancelledAct) return result;
+    return result.name;
+  }
+}
+```
+
+A cancellation does not automatically interrupt JavaScript after an awaited
+call. Return it (or stop explicitly) in every dependent step. Returning null from
+the parent would count as the parent's normal success and notify its subscribers.
+CancelledAct does not abort an HTTP request or roll back completed side effects;
+use the service's cancellation/transaction mechanism when needed.
+
+Use `$watch = ['GetUser']` for an independent reaction: after GetUser succeeds,
+the watching act receives its result as the sole argument. Watchers start without
+being awaited; awaiting GetUser does not await them. Avoid self-watching and
+indirect cycles. Use explicit composition when order or completion matters.
+
+`$isSingleton = true` merges overlapping calls to the same act into one in-flight
+execution. It is keyed only by action name: the first caller's arguments win.
+It is not a cache, debounce, queue, or per-ID deduplication. Do not apply it to
+parameter-dependent requests or writes unless ignoring later inputs is intended.
+
+The runtime also supports an injected `$emit` property, assigned before exec
+runs. With a manual registry, declare `$emit!: EmitAction` and import EmitAction
+as a type. In 2.8.4 this directly injected emitter uses an internal dispatch path
+that bypasses exec's singleton/progress tracking. With generated types, putting
+EmitAction on a class in the registry can create a circular type reference through
+ActGenerated. Prefer the public `act().exec(...)` pattern above in generated
+projects rather than weakening types to any or editing generated declarations.
+
+Action instances are reused. Keep per-call data in local variables and pass it
+as arguments; mutable fields can mix concurrent callers. Handle stale responses
+in the calling feature when multiple different requests can overlap.
+
+## Subscribe with a clear owner and cleanup
+
+`subscribe`/`on` observes future successful results, not inputs or a stored last
+value. Register before the event you need. With generated types, prefer `on`:
+in 2.8.4 subscribe uses Parameters of an overloaded type and can accept only the
+last generated event name, while on retains all event overloads. At runtime they
+are aliases. `unsubscribe`/`off` needs the same callback reference; the returned
+unsubscribe function is often simpler.
+
+```ts
+// Inside Vue setup
+import { onBeforeUnmount } from 'vue';
+import { act } from 'act-master';
+
+const off = act().on('GetUser', (user) => {
+  console.log('User loaded', user);
+});
+onBeforeUnmount(off);
+```
+
+The third argument can register cleanup directly:
+`act().on('GetUser', callback, onBeforeUnmount)`. For a group, pass the
+same unique object or Symbol as the third argument, then call
+`act().subsList.clear(key)` when its owner is disposed. Prefer explicit ownership
+over the ambient `subsList.add(key)` mode, which changes the current group for
+later subscriptions. In React, subscribe in an effect and return a cleanup
+function that calls off; do not subscribe during render.
+
+`act().once(name, callback)` returns an unsubscribe function and removes itself
+after the first successful event. Still dispose it if its owner disappears first.
+It is not a replay of an earlier result. Keep subscriber callbacks small; async
+callbacks are not awaited, so handle their rejected work explicitly.
+
+Vue >=3.3 also provides `useRefSubscription` from `act-master/vue`. In setup,
+`const user = useRefSubscription('GetUser')` gives a ref initially containing null
+and cleans up on unmount. It subscribes onBeforeMount, so a completed execution
+earlier in setup can be missed; execute onMounted or subscribe explicitly before
+dispatch. Its typed overloads need the CLI-generated actionList augmentation.
+
+## Test behavior with the current test API
+
+Import ActTest from `act-master/test`, not the package root. Each
+`ActTest.getInstance(options)` creates a fresh test singleton and initializes
+act(). Use fresh action instances and service doubles per test. Tests sharing
+the module-level singleton should not run concurrently in the same context.
+
+```ts
+import { expect, it, vi } from 'vitest';
+import { CancelledAct } from 'act-master';
+import { ActTest } from 'act-master/test';
+import { GetUser } from '@/features/users/act/GetUser.act';
+
+it('returns and publishes a user', async () => {
+  const expected = { id: '42', name: 'Ada' };
+  const getUser = vi.fn().mockResolvedValue(expected);
+  const dispatcher = ActTest.getInstance({
+    actions: [new GetUser()],
+    di: { usersApi: { getUser } },
+  });
+  const listener = vi.fn();
+  const off = dispatcher.on('GetUser', listener);
+
+  expect(await dispatcher.exec('GetUser', '42')).toEqual(expected);
+  expect(getUser).toHaveBeenCalledWith('42');
+  expect(listener).toHaveBeenCalledWith(expected);
+  off();
+  expect(dispatcher.t.entityCount('listeners')).toBe(0);
+});
+
+it('skips the API and success event on validation failure', async () => {
+  const getUser = vi.fn();
+  const dispatcher = ActTest.getInstance({
+    actions: [new GetUser()],
+    di: { usersApi: { getUser } },
+  });
+  const listener = vi.fn();
+  dispatcher.on('GetUser', listener);
+
+  expect(CancelledAct.is(await dispatcher.exec('GetUser', ''))).toBe(true);
+  expect(getUser).not.toHaveBeenCalled();
+  expect(listener).not.toHaveBeenCalled();
+});
+```
+
+For code using error routing, also assert the null result and handler input, plus
+rejection when no handler is configured. For orchestration, verify cancellation
+prevents the next side effect. Test concurrency behavior if using $isSingleton.
+
+The helper surface is `ActTest.getInstance(...)`, then
+`dispatcher.t.makeActionStub(...)`, `makeAndAddActionStub(...)`, and
+`entityCount('actions' | 'watchers' | 'listeners' | 'di')`. Execute via the returned
+dispatcher and assert the returned result. There are no static ActTest.exec,
+getLastResult, resetAll, or removeSingleton methods in this version.
+
+## Debugging and completion checklist
+
+- "Instance call before initialization": move initialization before the first
+  act() call; avoid dispatch during module imports.
+- "Not found action": check name spelling, the scan pattern, generation output,
+  imported registry, and bootstrap. A type declaration alone does not register it.
+- Duplicate action/DI registration: reuse the existing instance and registration;
+  do not attempt to reinitialize the singleton to replace its configuration.
+- Missing types: keep readonly literal names, typed exec signatures, and the
+  generated registry/module augmentation in the TypeScript program.
+- `$di is not a function`: use getDI or configured UseDI decorators for 2.8.4.
+- Duplicate/missing UI updates: check cleanup, subscription timing, validation,
+  CancelledAct/null outcomes, $watch cycles, and overlapping requests.
+- Prefer current `$watch`, `$validate`, `$isSingleton`, `$onError`, and plain
+  `$emit` to deprecated watch, validateInput, isSingleExec, action-level
+  errorHandlerEventName, useEmit, or @Emit. Global errorHandlerEventName remains
+  supported. Avoid deprecated inProgress/removeAction/clearActions in new code;
+  use component loading state with try/finally and owned subscription cleanup.
+- Before completing a change, regenerate if needed, run the application's type
+  check and relevant tests, and verify success, failure, cancellation, and cleanup
+  for the behavior changed. Inspect the generated diff for unexpected acts.
+
+## Further references
+
+- Installation: https://avil13.github.io/act-master/guide/installation
+- Action concepts: https://avil13.github.io/act-master/guide/act-master-action
+- Execution/subscriptions: https://avil13.github.io/act-master/guide/exec-and-subscribe
+- CLI: https://avil13.github.io/act-master/guide/cli
+- Source and tests: https://github.com/avil13/act-master/tree/master/packages/act-master/src
+
+Some older documentation examples use APIs absent from 2.8.4. When details differ,
+verify package exports, runtime code, and tests rather than copying legacy snippets.
