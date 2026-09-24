@@ -86,7 +86,7 @@ An act is a simple object that corresponds to the `ActMasterAction` interface.
 
 It must necessarily have the `name` property and the `exec` method.
 
-It is recommended to write act's in a class style, then [code generation](cli#act-master-cli) will be available to automatically collect all act's in the project.
+For automatic [code generation](cli#act-master-cli), use a named exported class or an exported `fn2act` / `functionToAction` call wrapping a named function. Keep one action per `*.act.ts` file.
 
 Example of the same act in different styles.
 
@@ -119,7 +119,7 @@ export const getData: ActMasterAction = {
 ```
 ```ts [Function style with helper]
 // get-data.act.ts
-import { ActMasterAction, fn2act } from 'act-master';
+import { fn2act } from 'act-master';
 
 export const getData = fn2act(GetData);
 
@@ -129,6 +129,47 @@ async function GetData(usr: string): Promise<unknown> {
 }
 ```
 :::
+
+### Typed function actions
+
+The helper preserves the function's parameters and return type. The CLI reads its
+name from the source and adds the literal event name to the generated registry:
+
+```ts
+// src/act/get-balance.act.ts
+import { fn2act } from 'act-master';
+
+export const getBalance = fn2act(function GetBalance(day: string): number {
+  return day === '2026.01.01' ? 100 : 0;
+});
+```
+
+Run `npx act-master-cli g` and initialize Act-Master with the generated `actions`.
+Calls then use the **function name**, not the exported variable name:
+
+```ts
+import { act } from 'act-master';
+
+const balance = act().exec('GetBalance', '2026.01.01'); // Promise<number | null>
+act().exec('GetBal'); // TypeScript error: unknown action
+act().exec('GetBalance', 2026); // TypeScript error: expected a string
+```
+
+`export default fn2act(function GetBalance(...) { ... })` is also supported, as is
+`fn2act(GetBalance)` when the named function is declared in the same file. Import
+the helper from `act-master`; `functionToAction` and import aliases work too.
+Declare parameter and return types just as you would for a class action. Async
+functions keep their resolved result type, e.g. `Promise<number | null>`.
+
+TypeScript alone cannot infer a literal name from `Function.name`: use the
+generated registry to obtain typed names. A bare, unexported `fn2act(...)` call is
+not collected. Inline anonymous functions are rejected by the helper. When
+minifying, preserve function names (for example, `keepNames: true` in esbuild),
+because the helper checks the function's name before the generated registry runs.
+
+Class actions remain supported. Keep their names literal (`readonly name = 'Name'`)
+and retain the generated array's inferred type: widening an action name to string
+or annotating the registry as `ActMasterAction[]` weakens name checking.
 
 
 ---

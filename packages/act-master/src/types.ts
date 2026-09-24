@@ -178,7 +178,7 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
   : never;
 type UnPromise<T> = T extends Promise<infer U> ? U : T;
 type UnsubscribeFnType = () => boolean;
-type PromiseResult<T> = T extends Promise<any> ? T : Promise<T>;
+type PromiseResult<T> = Promise<Awaited<T>>;
 // #endregion
 
 // #region [ for generation ]

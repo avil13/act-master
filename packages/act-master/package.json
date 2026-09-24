@@ -1,6 +1,6 @@
 {
   "name": "act-master",
-  "version": "2.8.4",
+  "version": "2.9.0",
   "author": "avil13",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -72,6 +72,6 @@
   },
   "dependencies": {
     "@vue/devtools-api": "^8.1.5",
-    "act-master-cli": "^1.4"
+    "act-master-cli": "^1.5"
   }
 }
