@@ -80,6 +80,8 @@ function getSidebar(): DefaultTheme.NavItemWithLink[] {
     { text: 'exec and subscribe', link: '/guide/exec-and-subscribe' },
     { text: 'Testing', link: '/guide/testing' },
     { text: 'Act-Master-CLI', link: '/guide/cli' },
+    { text: 'Vue', link: '/guide/vue' },
+    { text: 'Helpers', link: '/guide/helpers' },
   ];
 }
 

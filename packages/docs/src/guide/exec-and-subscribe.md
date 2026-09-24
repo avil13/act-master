@@ -79,6 +79,10 @@ export default {
 ```
 :::
 
+The helpers provide convenient access to this execution API:
+[`act()`](./helpers#act) returns the instance for
+`act().exec('Login', loginData)`, while the [`$act` proxy](./helpers#act-proxy)
+forwards `$act.Login(loginData)` to the same `exec` call.
 
 ## subscribe/unsubscribe on/off
 
@@ -135,6 +139,60 @@ act().on('Login', loginCallback);
 act().off('Login', loginCallback);
 ```
 :::
+
+## Vue: useAutoUnsubscribe
+
+In Vue, `useAutoUnsubscribe` groups subscriptions and removes them in
+`onBeforeUnmount`. Install [VueActMaster](./vue#vueactmaster) first, then call
+the helper synchronously inside `setup()` or `<script setup>`, before registering
+the subscriptions:
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import { act } from 'act-master';
+import { useAutoUnsubscribe } from 'act-master/vue';
+
+const balance = ref<number | null>(null);
+
+useAutoUnsubscribe();
+
+act().on('GetBalance', (value) => {
+  balance.value = value;
+});
+</script>
+
+<template>
+  <button @click="act().exec('GetBalance', '2026.01.01')">Load balance</button>
+  <p>Balance: {{ balance ?? 'Not loaded' }}</p>
+</template>
+```
+
+This example assumes that `GetBalance(day: string): number` is registered in the
+[generated actions](./helpers#fn2act). All subscriptions added to this group are
+removed when the component unmounts; no manual `off()` call is needed.
+
+::: tip Subscription ownership
+The helper changes the current subscription group on the shared ActMaster
+instance. Register subscriptions immediately after calling it, before an `await`
+or another group is selected. For subscriptions created later, use an explicit
+key as shown in the [Vue guide](./vue#useautounsubscribe).
+:::
+
+For a single subscription, you can pass Vue's cleanup hook directly:
+
+```ts
+// Inside setup()
+import { onBeforeUnmount } from 'vue';
+import { act } from 'act-master';
+
+act().on('GetBalance', (balance) => {
+  console.log(balance);
+}, onBeforeUnmount);
+```
+
+If you only need a reactive value, [useRefSubscription](./vue#userefsubscription)
+creates a ref and manages its own subscription and cleanup.
 
 ## once method
 
@@ -193,4 +251,3 @@ act().on('Login2', loginCallback);
 act().subsList.clear(SUBSCRIBE_KEY);
 ```
 :::
-
