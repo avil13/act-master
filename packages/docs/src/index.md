@@ -60,3 +60,83 @@ features:
   - title: Type Safe
     details: Write simple, safe, and testable code.
 ---
+
+## One action, two components
+
+Imagine a profile form and a header that displays the user's name. When the user saves the form, the header should show the updated name too.
+
+With Act-Master, the form **calls an action**, the action **saves the profile**, and the header **receives the result**.
+
+### 1. Put the save logic in an action
+
+Here, `profileApi` is your application's API client. Its `save` method returns the saved `Profile`, a type with `id: string` and `name: string`.
+
+```ts
+// src/act/SaveProfile.act.ts
+import type { ActMasterAction } from 'act-master';
+import { profileApi, type Profile } from '@/services/profile-api';
+
+export class SaveProfile implements ActMasterAction {
+  readonly name = 'SaveProfile';
+
+  async exec(profile: Profile): Promise<Profile> {
+    return profileApi.save({ ...profile, name: profile.name.trim() });
+  }
+}
+```
+
+::: details Register the action once when the app starts
+Install with `npm install act-master`, then register the action before mounting your Vue app:
+
+```ts
+// src/main.ts
+import { createApp } from 'vue';
+import { VueActMaster } from 'act-master/vue';
+import App from './App.vue';
+import { SaveProfile } from '@/act/SaveProfile.act';
+
+createApp(App)
+  .use(VueActMaster, { actions: [new SaveProfile()] })
+  .mount('#app');
+```
+
+For larger projects, the [CLI](/guide/cli) generates the actions registry and call types for you.
+:::
+
+### 2. Call it when the form is submitted
+
+```ts
+import { act } from 'act-master';
+
+// In the profile form's submit handler:
+await act().exec('SaveProfile', { id: '42', name: ' Ada ' });
+```
+
+The action trims the name and saves it. The caller receives the saved profile; subscribers receive the same result after the save succeeds. Handle a rejected call in the form or configure an [error-handler action](/guide/act-master-action#onerror).
+
+### 3. Let the header react to the saved profile
+
+```vue
+<!-- ProfileHeader.vue -->
+<script setup lang="ts">
+import { ref, onBeforeUnmount } from 'vue';
+import { act } from 'act-master';
+import type { Profile } from '@/services/profile-api';
+
+const name = ref('');
+
+act().on('SaveProfile', (profile: Profile) => {
+  name.value = profile.name;
+}, onBeforeUnmount);
+</script>
+
+<template>
+  <span>{{ name }}</span>
+</template>
+```
+
+Mount the header before submitting the form. It listens for future successful saves and unsubscribes automatically when it unmounts. After this save, it displays **Ada**.
+
+The form and header can evolve independently. Any screen can reuse `SaveProfile`, and you can test its save logic with a fake API client without rendering a component. Each component stays focused on its own UI.
+
+[Get started with Act-Master →](/guide/installation)
