@@ -1,13 +1,13 @@
 ---
 name: act-master
-description: Install and use act-master in TypeScript applications. Apply when creating, calling, organizing, testing, or debugging actions, including Vue integration, dependency injection, subscriptions, validation, and error handling.
+description: Install and use act-master with a CLI-generated action registry and Vue 3 plugin setup. Apply when creating, calling, organizing, testing, or debugging actions in Vue 3 or other TypeScript applications.
 ---
 
 # Act-Master development skill
 
 Act-Master separates application use cases (actions, also called acts) from the
 view. Its core works without a framework; Vue integration is a separate import.
-This reference targets act-master 2.8.4 and act-master-cli 1.4.1 in this repository.
+This reference targets act-master 2.9.0 and act-master-cli 1.5.0 in this repository.
 For other versions, check the installed exports and implementation first.
 
 ## Start with the existing application
@@ -19,13 +19,34 @@ For other versions, check the installed exports and implementation first.
   `vue-act-master` package or the documentation's `/v1/` section into new code.
 - Reuse the existing initialization, registry, services, and error policy. Add
   only the actions needed for the requested use case.
+- For Vue 3, install with `app.use(VueActMaster, options)` and then call
+  `app.mount('#app')`. Use the Vue setup below. `app.init` is not a Vue API;
+  `act.init` returns an ActMaster instance, which has no `mount` method.
+- Always generate the application's `actions` registry with act-master-cli and
+  import its exported array. Write action source files, not an inline registry
+  or a handwritten substitute for the generated file. Small isolated unit tests
+  may supply action instances directly to ActTest, as shown later.
+- `act` is an instance-access helper, not a namespace of action constructors.
+  There is no `act.MustAddAction`, `MustAddAction`, or action factory by that name.
+  Define real exported classes or named fn2act wrappers in matched source files.
 
-## Install and generate the registry
+## Required setup: install, define actions, generate, then connect Vue
 
-Run from the application root containing package.json and .act-master.yaml:
+Complete these steps in order for a new application. For an existing application,
+reuse its setup and regenerate after changing action files. Commands below use
+npm; use the equivalent local CLI invocation for the project's package manager.
+
+### 1. Install and configure the CLI
+
+Run from the application root containing package.json:
 
 ```sh
 npm install act-master
+```
+
+If there is no .act-master.yaml or .act-master.yml yet, run:
+
+```sh
 npx act-master-cli init
 ```
 
@@ -34,6 +55,9 @@ runtime import. `init` is interactive: it creates the config and can add an
 `act:gen` script and `src/act/common/OnError.act.ts`. It does not generate the
 registry. Keep an existing config instead of running init over it. The CLI
 declares Node.js >=20; also respect the application's runtime requirements.
+If an interactive prompt cannot be answered with the available tooling, create
+the config below and the actual action source files yourself, then run `g`.
+The registry must still be produced by the CLI.
 
 Example config supporting both shared and feature-local actions:
 
@@ -54,30 +78,140 @@ also resolve in TypeScript and the bundler; the CLI does not configure them.
 Run generation from the config directory: this CLI resolves src against the
 working directory, even when it finds the config in a parent directory.
 
-```sh
-npx act-master-cli g
+### 2. Create actual action source files
+
+Before generating, create the actions requested by the user. This minimal example
+defines a counter action and an error handler. Reuse an existing OnError action,
+including the CLI scaffold, rather than adding a second action with that name.
+
+```ts
+// src/act/IncrementCounter.act.ts
+import type { ActMasterAction } from 'act-master';
+
+export class IncrementCounter implements ActMasterAction {
+  readonly name = 'IncrementCounter';
+
+  exec(value: number): number {
+    return value + 1;
+  }
+}
 ```
 
-For repeatable local and CI use, add `"act:gen": "act-master-cli g"` to scripts.
-Generate before type checking/building, and after adding, moving, renaming, or
-changing the signature of an act. Import from the actual configured output path
-(`@/act/generated/actions` here), not a guessed `@/act/actions` path.
+If no error handler exists, create this file before generation:
+
+```ts
+// src/act/common/OnError.act.ts
+import { CancelledAct, type ActMasterAction } from 'act-master';
+
+export class OnError implements ActMasterAction {
+  readonly name = 'OnError';
+
+  exec(error: unknown): void {
+    if (CancelledAct.is(error)) return; // field feedback belongs to the caller
+    console.error('[ActMaster]', error); // replace with the app's reporting service
+  }
+}
+```
 
 CLI-compatible class actions have:
 
 - One named exported action class per matched file, with a `name` property and an
-  `exec` method declared on the class. The CLI imports it by name and calls
-  `new ClassName()`; required constructor arguments need manual registration.
+  `exec` method declared on the class. The CLI creates `new ClassName()` with no
+  arguments. Supply services through ActMaster DI instead of required constructor
+  arguments so the action remains compatible with generation.
 - A literal event name, preferably `readonly name = 'GetUser'`. Do not widen it
   to `string`. Event names must be unique across the whole application; class
   names imported into the generated registry must also be unambiguous.
 - Explicit parameter types and an explicit return type on `exec`. Use precise
   domain types, including cancellation when applicable.
 
+Exported named fn2act wrappers are also supported; see the function example below.
+
+### 3. Generate and inspect the registry (required)
+
+After creating or changing the action source files, run:
+
+```sh
+npx act-master-cli g
+```
+
+For the config above, the CLI writes `src/act/generated/actions.ts`. Open this
+actual generated file and verify that its exported `actions` includes the
+requested acts and the handler whose event name is OnError. The scaffolded
+handler's class may be called OnErrorAct; its event name is still OnError.
+
+The output path is `config.src` + `generate.actionsIndexFile`. With the example
+alias, import it as `import { actions } from '@/act/generated/actions'`. If the
+project uses another output path, derive the import from its real config.
+
+Use the imported array directly as the `actions` option. Do not recreate, map,
+or manually construct the application's registry in main.ts, and do not copy an
+example array into the generated output file. If an act is missing, fix its
+source/export or the scan pattern and rerun the CLI.
+
+If generation fails or the CLI cannot be run, report setup as incomplete and
+resolve the blocker; do not replace generation with a handwritten registry or
+claim that generation succeeded. Installing the package and running `init`
+alone are not a completed setup.
+
+For repeatable local and CI use, add `"act:gen": "act-master-cli g"` to scripts.
+Run generation after adding, deleting, moving, renaming, or changing the signature
+of an act, and before the application's type check/build. Preserve existing
+scripts when adding generation to a build sequence.
+
 The generated file includes instances and TypeScript module augmentation for
 event names, arguments, results, subscriptions, and the `$act` proxy. Keep it in
 the TypeScript program. Do not edit generated overloads or widen the inferred
 actions array to `ActMasterAction[]`, which loses the concrete action types.
+
+### 4. Connect Vue 3 with app.use, then mount the Vue app
+
+Use Vue 3.3 or newer. This is the standard Vue bootstrap; do not combine it with
+the non-Vue `act.init` example later in this document.
+
+```ts
+// src/main.ts
+import { createApp } from 'vue';
+import { VueActMaster, type ActMasterOptions } from 'act-master/vue';
+import App from './App.vue';
+import { actions } from '@/act/generated/actions';
+
+const options: ActMasterOptions = {
+  actions,
+  errorHandlerEventName: 'OnError',
+};
+
+const app = createApp(App);
+app.use(VueActMaster, options);
+app.mount('#app');
+```
+
+The OnError action must already exist in the generated array before configuring
+it as the handler. Preserve the application's existing CSS imports and plugin
+calls such as `app.use(createPinia())` and `app.use(router)`. Add ActMaster to
+that same `app` before its existing mount call; do not create a second app or
+remove other plugins. Pinia and the router are not requirements of ActMaster.
+
+`app` is the Vue application; `VueActMaster` is its plugin. The plugin initializes
+ActMaster internally. Use `act()` in components and actions after plugin setup,
+but keep `act.init(...)` out of this Vue bootstrap. Only the Vue app is mounted.
+
+### 5. Verify setup before declaring it complete
+
+Run the application's existing type check and build after generation. Confirm
+that the generated import resolves, requested actions and OnError appear in the
+registry, and Vue composables can use the installed plugin. A component can then
+call the example action through the public dispatcher:
+
+```ts
+// Inside a component after VueActMaster has been installed
+import { act } from 'act-master';
+
+const next = await act().exec('IncrementCounter', 0); // 1; number | null
+```
+
+Do not infer success solely from files being present: verify the commands ran
+successfully and the application's setup matches the generated output.
 
 ## Place logic according to ownership
 
@@ -107,37 +241,12 @@ not a replaying state store.
 
 ## Initialize once at the composition root
 
-Vue 3 example (App and usersApi are application-owned modules):
-
-```ts
-// src/main.ts
-import { createApp } from 'vue';
-import { VueActMaster, type ActMasterOptions } from 'act-master/vue';
-import App from './App.vue';
-import { actions } from '@/act/generated/actions';
-import { usersApi } from '@/services/users-api';
-
-const options: ActMasterOptions = {
-  actions,
-  di: { usersApi },
-  errorHandlerEventName: 'OnError', // this act must exist in actions
-};
-
-createApp(App).use(VueActMaster, options).mount('#app');
-```
-
-For React or vanilla TypeScript, use the same options with
-`import { act } from 'act-master'; act.init(options);` before application code
-calls `act()`. For a class-style entry point, `new ActMaster(options)` returns
-the instance to retain and use. Only `act.init(...)` assigns the function helper's
-instance; a standalone constructor call does not initialize `act()`.
-
 ActMaster is a singleton per loaded module. Repeated constructor/init calls reuse
 the existing instance and do not reconfigure its options. Do not initialize in
-components, action constructors, or per operation. Register additional actions
-with `act().addAction(instance)` or `act().addActions(instances)` only when needed;
-register each name once. Avoid importing the generated registry back into actions,
-which creates an initialization cycle.
+components, action constructors, or per operation. Add application actions through
+their source files and regenerate the registry; initialize with its imported
+`actions` array. Avoid importing the generated registry back into actions, which
+creates an initialization cycle.
 
 For SSR/multiple apps, do not assume a fresh ActMaster per request or mount. The
 module-level singleton can share services and data across requests. In a client
@@ -148,6 +257,8 @@ isolation design rather than repeated `new ActMaster()` calls.
 
 The application adapter implements this contract and exports its `usersApi`
 instance. It handles HTTP status checks, response validation, and transport errors.
+For the GetUser example below, import that real usersApi instance in main.ts and
+add `di: { usersApi }` to the existing Vue plugin options alongside `actions`.
 
 ```ts
 // src/services/users-api.ts (contract; supply an implementation in this module)
@@ -198,7 +309,7 @@ In projects using legacy TypeScript decorators, `@UseDI('usersApi') private
 api!: UsersApi` is another supported option (`UseDI` is from `act-master`). It
 requires a build pipeline supporting legacy decorators, with
 `experimentalDecorators: true`. Without decorators, the getDI example above
-works. In 2.8.4 `$di` appears in the interface but is not injected by the runtime;
+works. In this version `$di` appears in the interface but is not injected by the runtime;
 declaring `$di!` alone will not work. No BaseActMasterAction class is exported.
 
 The CLI also collects exported fn2act / functionToAction calls imported from
@@ -221,8 +332,10 @@ Keep explicit parameter/return types and one action per file; class discovery
 takes precedence when a file also contains an action class. The helper preserves
 the exec signature; the CLI supplies the literal name that TypeScript cannot
 infer from Function.name. Without the generated registry, its name is string.
-Plain object actions require manual registration. Bare unexported helper calls
-are not collected. Preserve function names when minifying (e.g. esbuild keepNames)
+Plain object actions and bare unexported helper calls are not collected. For
+application actions, use an exported class or fn2act wrapper and rerun the CLI
+instead of bypassing generation with manual registration.
+Preserve function names when minifying (e.g. esbuild keepNames)
 because the helper rejects anonymous functions before the registry executes.
 
 ## Execute and distinguish every outcome
@@ -289,28 +402,17 @@ instances created by the example.
 
 ## Handle errors deliberately
 
-Register the handler like any other act, then set global `errorHandlerEventName`
+Create the handler as an action source file and regenerate, then set global `errorHandlerEventName`
 or per-action `$onError = 'OnError'`. A local $onError takes precedence for thrown
 errors. Handlers receive the error value, not the original argument list or an
 automatic action-name envelope; add domain context when constructing an Error.
 
-```ts
-// src/act/common/OnError.act.ts
-import { CancelledAct, type ActMasterAction } from 'act-master';
-
-export class OnError implements ActMasterAction {
-  readonly name = 'OnError';
-
-  exec(error: unknown): void {
-    if (CancelledAct.is(error)) return; // field feedback belongs to the caller
-    console.error('[ActMaster]', error); // replace with the app's reporting service
-  }
-}
-```
+Use the OnError source example from the required setup above, or adapt the
+project's existing handler. Keep its event name in the generated registry.
 
 - For expected cancellation, return CancelledAct; throwing it enters exception
   routing instead. Returning it from exec does not invoke error handlers.
-- Validation is a distinct path in 2.8.4: a non-true $validate result is returned
+- Validation is a distinct path in this version: a non-true $validate result is returned
   unchanged and sent to BOTH global and local handlers when configured, even if
   both names are equal. Avoid duplicate reporting; normalize/ignore validation
   cancellations in handlers as appropriate.
@@ -365,9 +467,8 @@ It is not a cache, debounce, queue, or per-ID deduplication. Do not apply it to
 parameter-dependent requests or writes unless ignoring later inputs is intended.
 
 The runtime also supports an injected `$emit` property, assigned before exec
-runs. With a manual registry, declare `$emit!: EmitAction` and import EmitAction
-as a type. In 2.8.4 this directly injected emitter uses an internal dispatch path
-that bypasses exec's singleton/progress tracking. With generated types, putting
+runs. In this version the directly injected emitter uses an internal dispatch
+path that bypasses exec's singleton/progress tracking. With generated types, putting
 EmitAction on a class in the registry can create a circular type reference through
 ActGenerated. Prefer the public `act().exec(...)` pattern above in generated
 projects rather than weakening types to any or editing generated declarations.
@@ -380,7 +481,7 @@ in the calling feature when multiple different requests can overlap.
 
 `subscribe`/`on` observes future successful results, not inputs or a stored last
 value. Register before the event you need. With generated types, prefer `on`:
-in 2.8.4 subscribe uses Parameters of an overloaded type and can accept only the
+in this version subscribe uses Parameters of an overloaded type and can accept only the
 last generated event name, while on retains all event overloads. At runtime they
 are aliases. `unsubscribe`/`off` needs the same callback reference; the returned
 unsubscribe function is often simpler.
@@ -415,12 +516,31 @@ and cleans up on unmount. It subscribes onBeforeMount, so a completed execution
 earlier in setup can be missed; execute onMounted or subscribe explicitly before
 dispatch. Its typed overloads need the CLI-generated actionList augmentation.
 
+## Non-Vue bootstrap only (React or vanilla TypeScript)
+
+This alternative is for applications without Vue. It uses the same mandatory
+CLI generation workflow and the actual configured registry import:
+
+```ts
+import { act } from 'act-master';
+import { actions } from '@/act/generated/actions';
+
+act.init({ actions, errorHandlerEventName: 'OnError' });
+```
+
+Initialize before the first `act()` call. `act.init` returns an ActMaster
+instance, not a framework application. In Vue 3, use the app.use(VueActMaster,
+options) bootstrap above instead. A standalone `new ActMaster(options)` does not
+initialize the `act()` helper.
+
 ## Test behavior with the current test API
 
 Import ActTest from `act-master/test`, not the package root. Each
 `ActTest.getInstance(options)` creates a fresh test singleton and initializes
 act(). Use fresh action instances and service doubles per test. Tests sharing
 the module-level singleton should not run concurrently in the same context.
+The explicit arrays below intentionally isolate unit tests; do not copy them
+into the application bootstrap, which imports the CLI-generated actions array.
 
 ```ts
 import { expect, it, vi } from 'vitest';
@@ -480,7 +600,7 @@ getLastResult, resetAll, or removeSingleton methods in this version.
   do not attempt to reinitialize the singleton to replace its configuration.
 - Missing types: keep readonly literal names, typed exec signatures, and the
   generated registry/module augmentation in the TypeScript program.
-- `$di is not a function`: use getDI or configured UseDI decorators for 2.8.4.
+- `$di is not a function`: use getDI or configured UseDI decorators for this version.
 - Duplicate/missing UI updates: check cleanup, subscription timing, validation,
   CancelledAct/null outcomes, $watch cycles, and overlapping requests.
 - Prefer current `$watch`, `$validate`, `$isSingleton`, `$onError`, and plain
@@ -488,7 +608,10 @@ getLastResult, resetAll, or removeSingleton methods in this version.
   errorHandlerEventName, useEmit, or @Emit. Global errorHandlerEventName remains
   supported. Avoid deprecated inProgress/removeAction/clearActions in new code;
   use component loading state with try/finally and owned subscription cleanup.
-- Before completing a change, regenerate if needed, run the application's type
+- For setup: verify the actual CLI output file, import its actions array, and
+  install VueActMaster on the existing Vue app before app.mount. A fabricated
+  action constructor or act.init(...).mount(...) is not a valid installation.
+- Before completing a change, run CLI generation, run the application's type
   check and relevant tests, and verify success, failure, cancellation, and cleanup
   for the behavior changed. Inspect the generated diff for unexpected acts.
 
@@ -498,7 +621,9 @@ getLastResult, resetAll, or removeSingleton methods in this version.
 - Action concepts: https://avil13.github.io/act-master/guide/act-master-action
 - Execution/subscriptions: https://avil13.github.io/act-master/guide/exec-and-subscribe
 - CLI: https://avil13.github.io/act-master/guide/cli
+- Vue 3: https://avil13.github.io/act-master/guide/vue
+- Helpers: https://avil13.github.io/act-master/guide/helpers
 - Source and tests: https://github.com/avil13/act-master/tree/master/packages/act-master/src
 
-Some older documentation examples use APIs absent from 2.8.4. When details differ,
+Some older documentation examples use APIs absent from this version. When details differ,
 verify package exports, runtime code, and tests rather than copying legacy snippets.
