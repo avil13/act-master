@@ -196,6 +196,65 @@ remove other plugins. Pinia and the router are not requirements of ActMaster.
 ActMaster internally. Use `act()` in components and actions after plugin setup,
 but keep `act.init(...)` out of this Vue bootstrap. Only the Vue app is mounted.
 
+#### What ActMasterOptions configures
+
+These options configure ActMaster, not Vue, Pinia, or the router:
+
+| Option | Meaning | When to include it |
+| --- | --- | --- |
+| `actions` | Registers the executable actions and their event names. | Import the CLI-generated array for the application. It contains action instances, not service dependencies. |
+| `errorHandlerEventName` | Names the registered action that receives errors when an action has no applicable local `$onError` handler. | Include it when the application has a global error policy. `'OnError'` is an example event name, not a built-in handler; that action must exist. Without a configured handler, unhandled execution errors reject the returned Promise. |
+| `di` | Registers shared dependencies by key for actions to retrieve with `act().getDI(key)`. | Optional. Include only real dependencies consumed by the application's actions; omit it when none are needed. |
+| `autoUnsubscribeCallback` | A custom integration hook called on subscription with `{ context, listener, eventName }`. | Optional advanced integration. It does not perform cleanup on its own. For Vue 3 components, prefer the documented lifecycle hooks or useAutoUnsubscribe instead of adding this option during installation. |
+
+DI means dependency injection: the application supplies an action's collaborators
+from outside instead of the action constructing them itself. For example, a
+GetUser action contains the use case, while an existing usersApi service handles
+communication with the backend. main.ts connects the two by registering that
+service; the action retrieves it under the same key. This lets tests supply a
+controlled service double without changing the action's business logic.
+
+In ActMaster, DI is a simple shared key-to-value map. It does not generate an API
+client, implement HTTP requests, instantiate registered classes, or persist
+application state. Keys such as `usersApi` are chosen by the application and are
+not built-in dependencies. This container is accessed through ActMaster's getDI,
+not through Vue's inject().
+
+Only if the actual actions need usersApi and the project has its implementation,
+import that service into the existing bootstrap and add it to the options:
+
+```ts
+// In the existing main.ts; use the project's actual service module path.
+import { VueActMaster, type ActMasterOptions } from 'act-master/vue';
+import { actions } from '@/act/generated/actions';
+import { usersApi } from '@/services/users-api';
+
+const options: ActMasterOptions = {
+  actions,
+  errorHandlerEventName: 'OnError',
+  di: { usersApi },
+};
+
+app.use(VueActMaster, options); // app is the existing Vue application
+```
+
+Do not add usersApi, a GetUser action, or `di: {}` just to install ActMaster.
+Inspect the requested use case and existing service modules first. If a real
+service must be implemented, use the application's actual backend/client
+contract. If that contract is unknown, identify the missing information rather
+than inventing an endpoint or returning fabricated users as a working service.
+
+An implementation that returns `Promise.resolve({ id, name: 'User ' + id })`
+is a mock: it makes no backend request. Use such service doubles in isolated
+tests or explicitly requested demo/mock mode, not as an implicit installation
+step. Define service implementations in service modules and keep bootstrap
+focused on wiring their imports together.
+
+`as UsersApi` is only a TypeScript assertion; it neither implements the service
+nor validates its data. Prefer a `: UsersApi` annotation or `satisfies UsersApi`
+on the real service definition to check its shape, and validate external data
+at the service boundary. Do not use assertions to conceal an unfinished adapter.
+
 ### 5. Verify setup before declaring it complete
 
 Run the application's existing type check and build after generation. Confirm
@@ -255,6 +314,9 @@ isolation design rather than repeated `new ActMaster()` calls.
 
 ## Write a typed action and supply dependencies
 
+This is an optional users-feature example, not a list of services or actions
+required for installation. Apply it only when implementing that use case.
+
 The application adapter implements this contract and exports its `usersApi`
 instance. It handles HTTP status checks, response validation, and transport errors.
 For the GetUser example below, import that real usersApi instance in main.ts and
@@ -271,6 +333,10 @@ export interface UsersApi {
   getUser(id: string): Promise<User>;
 }
 ```
+
+These interfaces describe the service contract only; they do not create or
+export a usersApi implementation. Reuse or implement the real adapter against
+the project's backend contract before importing usersApi in main.ts.
 
 ```ts
 // src/features/users/act/GetUser.act.ts
